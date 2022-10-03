@@ -1,7 +1,10 @@
 <template>
-  <b-container id="map"> <button @click="bro">sasa</button></b-container>
+  <b-container>
+    <div id="map"></div>
+  </b-container>
 </template>
 <script>
+import "mapbox-gl/dist/mapbox-gl.css";
 import mapboxgl from "mapbox-gl";
 export default {
   data() {
@@ -19,12 +22,27 @@ export default {
       mapboxgl.accessToken = this.access_token;
       this.map = new mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/javy3r18/cl8ow1ggb000514p3f9590uoe",
+        style: "mapbox://styles/mapbox/streets-v11",
         zoom: 11,
         center: [107.61861, -6.90389],
       });
-    },
 
+      this.map.addControl(
+        new mapboxgl.FullscreenControl({
+          container: document.querySelector("body"),
+        })
+      );
+
+      this.map.addControl(
+        new mapboxgl.GeolocateControl({
+          positionOptions: {
+            enableHighAccuracy: true,
+          },
+          trackUserLocation: true,
+          showUserHeading: true,
+        })
+      );
+    },
   },
 };
 </script>
