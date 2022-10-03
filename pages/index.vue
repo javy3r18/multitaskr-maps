@@ -1,11 +1,17 @@
 <template>
-  <b-container>
+  <b-container fluid class="m-0 p-0">
+    <form>
+<input name="address" autocomplete="shipping address-line1">
+<input name="apartment" autocomplete="shipping address-line2">
+<input name="city" autocomplete="shipping address-level2">
+<input name="state" autocomplete="shipping address-level1">
+<input name="country" autocomplete="shipping country">
+</form>
     <div id="map"></div>
   </b-container>
 </template>
+
 <script>
-import "mapbox-gl/dist/mapbox-gl.css";
-import mapboxgl from "mapbox-gl";
 export default {
   data() {
     return {
@@ -14,34 +20,48 @@ export default {
       map: {},
     };
   },
+
   mounted() {
     this.createMap();
   },
+
   methods: {
     createMap() {
-      mapboxgl.accessToken = this.access_token;
-      this.map = new mapboxgl.Map({
+      this.$mapboxgl.accessToken = this.access_token;
+      this.map = new this.$mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/streets-v11",
         zoom: 11,
         center: [107.61861, -6.90389],
       });
 
-      this.map.addControl(
-        new mapboxgl.FullscreenControl({
-          container: document.querySelector("body"),
-        })
-      );
+      this.$search.autofill({
+        accessToken: this.access_token,
+      });
 
-      this.map.addControl(
-        new mapboxgl.GeolocateControl({
-          positionOptions: {
-            enableHighAccuracy: true,
-          },
-          trackUserLocation: true,
-          showUserHeading: true,
-        })
-      );
+      // const search = new MapboxSearchBox();
+      // search.accessToken = this.access_token;
+      // this.map.addControl(search);
+
+      // this.map.addControl(
+      //   new this.$mapboxgl.FullscreenControl({
+      //     container: document.querySelector("body"),
+      //   })
+      // );
+
+      // this.map.addControl(
+      //   new this.$mapboxgl.GeolocateControl({
+      //     positionOptions: {
+      //       enableHighAccuracy: true,
+      //     },
+      //     trackUserLocation: true,
+      //     showUserHeading: true,
+      //   })
+      // );
+
+      // mapboxsearch.autofill({
+      //   accessToken: this.access_token,
+      // });
     },
   },
 };
