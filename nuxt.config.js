@@ -30,7 +30,10 @@ export default {
     },
     {
       src: "~/plugins/mapboxsearch.js",
-    }
+    },
+    {
+      src: "~/plugins/mapboxgeo.js",
+    },
   ],  
 
   // Auto import components: https://go.nuxtjs.dev/config-components
@@ -43,6 +46,7 @@ export default {
   modules: [
     // https://go.nuxtjs.dev/bootstrap
     "bootstrap-vue/nuxt",
+    "@nuxtjs/axios"
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

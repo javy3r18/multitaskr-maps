@@ -1,10 +1,11 @@
-<template>
-  <b-container fluid class="m-0 p-0">
+    <template>
+<b-container fluid class="m-0 p-0">
     <b-row>
       <b-col>
         <div class="m-3">
           <form class="d-flex flex-column">
             <input
+              v-model="inputs.address"
               class="my-2"
               name="address"
               placeholder="Address"
@@ -12,6 +13,7 @@
               autocomplete="address-line1"
             />
             <input
+            v-model="inputs.aparment"
               class="my-2"
               name="apartment"
               placeholder="Apartment number"
@@ -19,6 +21,7 @@
               autocomplete="address-line2"
             />
             <input
+            v-model="inputs.city"
               class="my-2"
               name="city"
               placeholder="City"
@@ -26,6 +29,7 @@
               autocomplete="address-level2"
             />
             <input
+            v-model="inputs.state"
               class="my-2"
               name="state"
               placeholder="State"
@@ -33,6 +37,7 @@
               autocomplete="address-level1"
             />
             <input
+            v-model="inputs.country"
               class="my-2"
               name="country"
               placeholder="Country"
@@ -40,6 +45,7 @@
               autocomplete="country"
             />
             <input
+            v-model="inputs.postcode"
               class="my-2"
               name="postcode"
               placeholder="Postcode"
@@ -57,6 +63,7 @@
 </template>
 
 <script>
+  import {mapGetters} from 'vuex'
 export default {
   data() {
     return {
@@ -65,30 +72,43 @@ export default {
       map: {},
       marker: {},
       search: {},
-      coordinates: {
-        lng: 107.61861,
-        lat: -6.90389,
+      geo: null,
+      coord: null,
+      inputs: {
+        address: null,
+        aparment: null,
+        city: null,
+        state: null,
+        country: null,
+        postcode: null
       },
+      coordinates: {
+        lng: -117.04342,
+        lat: 32.55252,
+      },
+
     };
   },
 
   mounted() {
-    this.init();
+    this.createMap();
+    this.setNewMarker();
+    this.setAutoFill();
   },
 
   methods: {
-    init() {
-      let successCallback = (location) => {
-        this.success = true;
-        this.coordinates.lat = location.coords.latitude;
-        this.coordinates.lng = location.coords.longitude;
-        this.createMap();
-      };
-      let errorCallback = (location) => {
-        console.log("Error Location");
-      };
-      navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
-    },
+    // init() {
+    //   let successCallback = (location) => {
+    //     this.success = true;
+    //     this.coordinates.lat = location.coords.latitude;
+    //     this.coordinates.lng = location.coords.longitude;
+    //     this.createMap();
+    //   };
+    //   let errorCallback = (location) => {
+    //     console.log("Error Location");
+    //   };
+    //   navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+    // },
 
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
@@ -96,71 +116,96 @@ export default {
         container: "map",
         style: "mapbox://styles/mapbox/streets-v11",
         zoom: 11,
-        center: [this.coordinates.lng, this.coordinates.lat],
+        center: this.coordinates,
       });
 
-      this.marker = new this.$mapboxgl.Marker({
-        color: "green",
-        draggable: true,
-      })
-        .setLngLat([this.coordinates.lng, this.coordinates.lat])
-        .addTo(this.map);
-
-        this.search = this.$search.autofill({
-                accessToken: this.access_token,
-                options: { country: "us" },
-            });
-
-      this.search.addEventListener("retrieve", (event) => {
-        console.log(event);
-                this.coordinates.lat =
-                    event.detail.features[0].geometry.coordinates[1];
-                this.coordinates.lng =
-                    event.detail.features[0].geometry.coordinates[0];
-                this.map.setCenter([
-                    this.coordinates.lng,
-                    this.coordinates.lat,
-                ]);
-            });
-
-      // const search = new MapboxSearchBox();
-      // search.accessToken = this.access_token;
-      // this.map.addControl(search);
-
-      // this.map.addControl(
-      //   new this.$mapboxgl.FullscreenControl({
-      //     container: document.querySelector("body"),
-      //   })
-      // );
-
-      // this.map.addControl(
-      //   new this.$mapboxgl.GeolocateControl({
-      //     positionOptions: {
-      //       enableHighAccuracy: true,
-      //     },
-      //     trackUserLocation: true,
-      //     showUserHeading: true,
-      //   })
-      // );
-
-      // mapboxsearch.autofill({
-      //   accessToken: this.access_token,
-      // });
     },
+
+    setNewMarker() {
+
+        this.marker = new this.$mapboxgl.Marker({
+          color: "red",
+          draggable: true,
+        })
+          .setLngLat(this.coordinates)
+          .addTo(this.map);
+          
+        this.marker.on("dragend", this.onDragEnd);
+
+    },
+
+    setAutoFill() {
+      this.search = this.$search.autofill({
+        accessToken: this.access_token,
+        options: { country: "us" },
+      });
+    },
+
+    onDragEnd() {
+      this.coordinates = this.marker.getLngLat();
+      console.log(this.coordinates);
+    },
+
+    onAddressChange() {
+      this.search.addEventListener("retrive", (event) => {
+        console.log(event);
+        this.coordinates = event.detail.features[0].geometry.coordinates;
+        this.map.easeTo({
+          center: this.coordinates,
+          zoom: 15,
+          speed: 3,
+          duration: 2500,
+          curve: 2,
+        });
+      });
+      console.log(this.marker);
+    },
+
+    async getAddress(){
+      try {
+        let response = await this.$axios.get(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${this.coordinates.lng},${this.coordinates.lat}.json?access_token=pk.eyJ1IjoiamF2eTNyMTgiLCJhIjoiY2w4b3Q3aTdmMDB6djNvbzhycGtmYXF1MSJ9.55Zc-lWR2Oc7YzjBt9S5ow`
+        );
+        console.log(response)
+      } catch (e) {
+        console.error(e);
+      }
+    
+    }
+
+
   },
 
   watch: {
-        coordinates: {
-            deep: true,
-            handler(value, old) {
-                this.marker.setLngLat([
-                    this.coordinates.lng,
-                    this.coordinates.lat,
-                ]);
-            },
-        },
+    coordinates: {
+      deep: true,
+      handler(value, old) {
+       this.getAddress();
+        this.marker.setLngLat(this.coordinates);
+        this.map.easeTo({
+          center: this.coordinates,
+          zoom: 15,
+          speed: 3,
+          duration: 2500,
+          curve: 2,
+        });
+      },
     },
 
+    search: {
+      deep: true,
+      handler(value, old) {
+        this.onAddressChange();
+      },
+    },
+
+    inputs: {
+      deep: true,
+      handler(value, old) {
+        console.log(this.inputs)
+      },
+    },
+  },
 };
 </script>
 <style>
