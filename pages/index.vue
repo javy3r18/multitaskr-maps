@@ -119,7 +119,104 @@ export default {
         center: this.coordinates,
       });
 
+      this.map.on("load", () => {
+                // Insert the layer beneath any symbol layer.
+                const layers = this.map.getStyle().layers;
+                const labelLayerId = layers.find(
+                    (layer) =>
+                        layer.type === "symbol" && layer.layout["text-field"]
+                ).id;
+                // The 'building' layer in the Mapbox Streets
+                // vector tileset contains building height data
+                // from OpenStreetMap.
+                this.map.addLayer(
+                    {
+                        id: "add-3d-buildings",
+                        source: "composite",
+                        "source-layer": "building",
+                        filter: ["==", "extrude", "true"],
+                        type: "fill-extrusion",
+                        minzoom: 15,
+                        transition: {
+                            duration: 300,
+                            delay: 0,
+                        },
+                        paint: {
+                            "fill-extrusion-color": "#aaa",
+                            // Use an 'interpolate' expression to
+                            // add a smooth transition effect to
+                            // the buildings as the user zooms in.
+                            "fill-extrusion-height": [
+                                "interpolate",
+                                ["linear"],
+                                ["zoom"],
+                                15,
+                                0,
+                                15.05,
+                                ["get", "height"],
+                            ],
+                            "fill-extrusion-base": [
+                                "interpolate",
+                                ["linear"],
+                                ["zoom"],
+                                15,
+                                0,
+                                15.05,
+                                ["get", "min_height"],
+                            ],
+                            "fill-extrusion-opacity": 0.6,
+                        },
+                    },
+                    labelLayerId
+                );
+                this.addPolygon();
+            });
+
     },
+
+    addPolygon() {
+            this.map.addSource("maine", {
+                type: "geojson",
+                data: {
+                    type: "Feature",
+                    geometry: {
+                        type: "Polygon",
+                        // These coordinates outline Maine.
+                        coordinates: [
+                            [
+                                [-117.04032221565436,32.56788775850487],
+                                [-117.04047227600599,32.56772503030933],
+                                [-117.04145086617561,32.562454274516284],
+                                [-117.03323380160447,32.562619119624316],
+                                [-117.028235431521,32.56763679941878]
+                            ],
+                        ],
+                    },
+                },
+            });
+            // Add a new layer to visualize the polygon.
+            this.map.addLayer({
+                id: "maine",
+                type: "fill",
+                source: "maine", // reference the data source
+                layout: {},
+                paint: {
+                    "fill-color": "#0080ff", // blue color fill
+                    "fill-opacity": 0.5,
+                },
+            });
+            // Add a black outline around the polygon.
+            this.map.addLayer({
+                id: "outline",
+                type: "line",
+                source: "maine",
+                layout: {},
+                paint: {
+                    "line-color": "#000",
+                    "line-width": 3,
+                },
+            });
+        },
 
     setNewMarker() {
 
@@ -147,7 +244,7 @@ export default {
     },
 
     onAddressChange() {
-      this.search.addEventListener("retrive", (event) => {
+      this.search.addEventListener("retrieve", (event) => {
         console.log(event);
         this.coordinates = event.detail.features[0].geometry.coordinates;
         this.map.easeTo({
@@ -157,6 +254,7 @@ export default {
           duration: 2500,
           curve: 2,
         });
+        console.log(this.coordinates)
       });
       console.log(this.marker);
     },
@@ -164,8 +262,9 @@ export default {
     async getAddress(){
       try {
         let response = await this.$axios.get(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${this.coordinates.lng},${this.coordinates.lat}.json?access_token=pk.eyJ1IjoiamF2eTNyMTgiLCJhIjoiY2w4b3Q3aTdmMDB6djNvbzhycGtmYXF1MSJ9.55Zc-lWR2Oc7YzjBt9S5ow`
+          'https://api.mapbox.com/geocoding/v5/mapbox.places/' +  this.coordinates.lng.toString() +',' + this.coordinates.lat.toString() + '.json?access_token=pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g'
         );
+        this.inputs.address = response.data.features[0].place_name
         console.log(response)
       } catch (e) {
         console.error(e);
@@ -202,7 +301,7 @@ export default {
     inputs: {
       deep: true,
       handler(value, old) {
-        console.log(this.inputs)
+
       },
     },
   },
