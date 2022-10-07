@@ -54,6 +54,11 @@
             />
           </form>
         </div>
+        <div class="m-3">
+          <b-button style="background-color: #4e04af" @click="map.setStyle('mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh')">Multitakr Style</b-button>
+          <b-button @click="map.setStyle('mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi')">Normal Style</b-button>
+          <b-button @click="map.setStyle('mapbox://styles/soloskilos/cl8ywrz0j000l14mrphfgsifg')">Satelite</b-button>
+        </div>
       </b-col>
       <b-col cols="10">
         <div id="map"></div>
@@ -63,7 +68,7 @@
 </template>
 
 <script>
-  import {mapGetters} from 'vuex'
+import {mapGetters} from 'vuex'
 export default {
   data() {
     return {
@@ -72,8 +77,6 @@ export default {
       map: {},
       marker: {},
       search: {},
-      geo: null,
-      coord: null,
       inputs: {
         address: null,
         aparment: null,
@@ -86,14 +89,24 @@ export default {
         lng: -117.04342,
         lat: 32.55252,
       },
+      geojsonArrays: [],
 
     };
+  },
+
+  computed: {
+    ...mapGetters({
+            items: "locations/items",
+            geojson: "geojson/geojson",
+        }),
+
   },
 
   mounted() {
     this.createMap();
     this.setNewMarker();
     this.setAutoFill();
+    this.filterData();
   },
 
   methods: {
@@ -114,7 +127,7 @@ export default {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/streets-v11",
+        style: "mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh",
         zoom: 11,
         center: this.coordinates,
       });
@@ -129,50 +142,31 @@ export default {
                 // The 'building' layer in the Mapbox Streets
                 // vector tileset contains building height data
                 // from OpenStreetMap.
-                this.map.addLayer(
-                    {
-                        id: "add-3d-buildings",
-                        source: "composite",
-                        "source-layer": "building",
-                        filter: ["==", "extrude", "true"],
-                        type: "fill-extrusion",
-                        minzoom: 15,
-                        transition: {
-                            duration: 300,
-                            delay: 0,
-                        },
-                        paint: {
-                            "fill-extrusion-color": "#aaa",
-                            // Use an 'interpolate' expression to
-                            // add a smooth transition effect to
-                            // the buildings as the user zooms in.
-                            "fill-extrusion-height": [
-                                "interpolate",
-                                ["linear"],
-                                ["zoom"],
-                                15,
-                                0,
-                                15.05,
-                                ["get", "height"],
-                            ],
-                            "fill-extrusion-base": [
-                                "interpolate",
-                                ["linear"],
-                                ["zoom"],
-                                15,
-                                0,
-                                15.05,
-                                ["get", "min_height"],
-                            ],
-                            "fill-extrusion-opacity": 0.6,
-                        },
-                    },
-                    labelLayerId
-                );
                 this.addPolygon();
+                // this.marker.on("dragend", this.onDragEnd);
+
+                this.marker.on("dragend", (event) => {
+                this.coordinates.lat = this.marker.getLngLat().lat;
+                this.coordinates.lng = this.marker.getLngLat().lng;
+                this.map.easeTo({
+                        center: [this.marker.getLngLat().lng, this.marker.getLngLat().lat],
+                        zoom: 15,
+                        speed: 3,
+                        duration: 2500,
+                        curve: 2,
+                        });
+                this.onMoveMarker(this.coordinates.lat, this.coordinates.lng );
+                this.$store.dispatch("locations/get", this.coordinates)
+                this.inputs.address = this.items.features[0].place_name
+                console.log(this.items);
+            })
             });
 
     },
+
+    onMoveMarker(lat, lng) {
+        this.marker.setLngLat([lng, lat]);
+      },
 
     addPolygon() {
             this.map.addSource("maine", {
@@ -183,13 +177,7 @@ export default {
                         type: "Polygon",
                         // These coordinates outline Maine.
                         coordinates: [
-                            [
-                                [-117.04032221565436,32.56788775850487],
-                                [-117.04047227600599,32.56772503030933],
-                                [-117.04145086617561,32.562454274516284],
-                                [-117.03323380160447,32.562619119624316],
-                                [-117.028235431521,32.56763679941878]
-                            ],
+                            this.geojsonArrays
                         ],
                     },
                 },
@@ -201,7 +189,7 @@ export default {
                 source: "maine", // reference the data source
                 layout: {},
                 paint: {
-                    "fill-color": "#0080ff", // blue color fill
+                    "fill-color": "green", // blue color fill
                     "fill-opacity": 0.5,
                 },
             });
@@ -212,7 +200,7 @@ export default {
                 source: "maine",
                 layout: {},
                 paint: {
-                    "line-color": "#000",
+                    "line-color": "#072E01",
                     "line-width": 3,
                 },
             });
@@ -227,7 +215,7 @@ export default {
           .setLngLat(this.coordinates)
           .addTo(this.map);
           
-        this.marker.on("dragend", this.onDragEnd);
+        
 
     },
 
@@ -238,10 +226,12 @@ export default {
       });
     },
 
-    onDragEnd() {
-      this.coordinates = this.marker.getLngLat();
-      console.log(this.coordinates);
-    },
+    // onDragEnd() {
+    //   this.coordinates = this.marker.getLngLat();
+    //   this.$store.dispatch("locations/get", this.coordinates)
+    //   console.log(this.items );
+    //   this.inputs.address = this.items.features[0].place_name
+    // },
 
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
@@ -259,18 +249,13 @@ export default {
       console.log(this.marker);
     },
 
-    async getAddress(){
-      try {
-        let response = await this.$axios.get(
-          'https://api.mapbox.com/geocoding/v5/mapbox.places/' +  this.coordinates.lng.toString() +',' + this.coordinates.lat.toString() + '.json?access_token=pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g'
-        );
-        this.inputs.address = response.data.features[0].place_name
-        console.log(response)
-      } catch (e) {
-        console.error(e);
-      }
-    
-    }
+    filterData(){
+            this.geojson.forEach(item => {
+                let itemArray = [item.lng,item.lat];
+                this.geojsonArrays.push(itemArray);
+            });
+            console.log(this.geojsonArrays);
+        }
 
 
   },
@@ -278,8 +263,7 @@ export default {
   watch: {
     coordinates: {
       deep: true,
-      handler(value, old) {
-       this.getAddress();
+      handler(value, old) {   
         this.marker.setLngLat(this.coordinates);
         this.map.easeTo({
           center: this.coordinates,
@@ -298,12 +282,6 @@ export default {
       },
     },
 
-    inputs: {
-      deep: true,
-      handler(value, old) {
-
-      },
-    },
   },
 };
 </script>
