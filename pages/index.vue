@@ -1,5 +1,5 @@
-    <template>
-<b-container fluid class="m-0 p-0">
+<template>
+  <b-container fluid class="m-0 p-0">
     <b-row>
       <b-col>
         <div class="m-3">
@@ -13,7 +13,7 @@
               autocomplete="address-line1"
             />
             <input
-            v-model="inputs.aparment"
+              v-model="inputs.aparment"
               class="my-2"
               name="apartment"
               placeholder="Apartment number"
@@ -21,7 +21,7 @@
               autocomplete="address-line2"
             />
             <input
-            v-model="inputs.city"
+              v-model="inputs.city"
               class="my-2"
               name="city"
               placeholder="City"
@@ -29,7 +29,7 @@
               autocomplete="address-level2"
             />
             <input
-            v-model="inputs.state"
+              v-model="inputs.state"
               class="my-2"
               name="state"
               placeholder="State"
@@ -37,7 +37,7 @@
               autocomplete="address-level1"
             />
             <input
-            v-model="inputs.country"
+              v-model="inputs.country"
               class="my-2"
               name="country"
               placeholder="Country"
@@ -45,7 +45,7 @@
               autocomplete="country"
             />
             <input
-            v-model="inputs.postcode"
+              v-model="inputs.postcode"
               class="my-2"
               name="postcode"
               placeholder="Postcode"
@@ -55,9 +55,29 @@
           </form>
         </div>
         <div class="m-3">
-          <b-button style="background-color: #4e04af" @click="map.setStyle('mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh')">Multitakr Style</b-button>
-          <b-button @click="map.setStyle('mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi')">Normal Style</b-button>
-          <b-button @click="map.setStyle('mapbox://styles/soloskilos/cl8ywrz0j000l14mrphfgsifg')">Satelite</b-button>
+          <b-button
+            style="background-color: #4e04af"
+            @click="
+              map.setStyle('mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh')
+            "
+            >Multitakr Style</b-button
+          >
+          <b-button
+            @click="
+              map.setStyle(
+                'mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi'
+              )
+            "
+            >Normal Style</b-button
+          >
+          <b-button
+            @click="
+              map.setStyle(
+                'mapbox://styles/soloskilos/cl8ywrz0j000l14mrphfgsifg'
+              )
+            "
+            >Satelite</b-button
+          >
         </div>
       </b-col>
       <b-col cols="10">
@@ -94,19 +114,19 @@ export default {
     };
   },
 
+  mounted() {
+    this.createMap();
+    this.setNewMarker();
+    this.setAutoFill();
+    this.filterData();
+  },
+
   computed: {
     ...mapGetters({
             items: "locations/items",
             geojson: "geojson/geojson",
         }),
 
-  },
-
-  mounted() {
-    this.createMap();
-    this.setNewMarker();
-    this.setAutoFill();
-    this.filterData();
   },
 
   methods: {
@@ -127,11 +147,11 @@ export default {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh",
+        style: "mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi",
         zoom: 11,
         center: this.coordinates,
       });
-
+      
       this.map.on("load", () => {
                 // Insert the layer beneath any symbol layer.
                 const layers = this.map.getStyle().layers;
@@ -142,33 +162,14 @@ export default {
                 // The 'building' layer in the Mapbox Streets
                 // vector tileset contains building height data
                 // from OpenStreetMap.
+                
                 this.addPolygon();
-                // this.marker.on("dragend", this.onDragEnd);
-
-                this.marker.on("dragend", (event) => {
-                this.coordinates.lat = this.marker.getLngLat().lat;
-                this.coordinates.lng = this.marker.getLngLat().lng;
-                this.map.easeTo({
-                        center: [this.marker.getLngLat().lng, this.marker.getLngLat().lat],
-                        zoom: 15,
-                        speed: 3,
-                        duration: 2500,
-                        curve: 2,
-                        });
-                this.onMoveMarker(this.coordinates.lat, this.coordinates.lng );
-                this.$store.dispatch("locations/get", this.coordinates)
-                this.inputs.address = this.items.features[0].place_name
-                console.log(this.items);
-            })
             });
-
     },
 
-    onMoveMarker(lat, lng) {
-        this.marker.setLngLat([lng, lat]);
-      },
 
-    addPolygon() {
+
+  addPolygon() {
             this.map.addSource("maine", {
                 type: "geojson",
                 data: {
@@ -206,55 +207,52 @@ export default {
             });
         },
 
-    setNewMarker() {
 
-        this.marker = new this.$mapboxgl.Marker({
-          color: "red",
-          draggable: true,
-        })
-          .setLngLat(this.coordinates)
-          .addTo(this.map);
-          
-        
+        setNewMarker() {
+      this.marker = new this.$mapboxgl.Marker({
+        color: "red",
+        draggable: true,
+      })
+        .setLngLat(this.coordinates)
+        .addTo(this.map);
 
-    },
+      this.marker.on("dragend", this.onDragEnd);
+  },
 
-    setAutoFill() {
-      this.search = this.$search.autofill({
-        accessToken: this.access_token,
-        options: { country: "us" },
+  setAutoFill() {
+    this.search = this.$search.autofill({
+      accessToken: this.access_token,
+      options: { country: "us" },
+    });
+  },
+
+  onDragEnd() {
+    this.coordinates = this.marker.getLngLat();
+  },
+
+  onAddressChange() {
+    this.search.addEventListener("retrieve", (event) => {
+      this.coordinates = event.detail.features[0].geometry.coordinates;
+      this.map.easeTo({
+        center: this.coordinates,
+        zoom: 15,
+        speed: 3,
+        duration: 2500,
+        curve: 2,
       });
-    },
+    });
+  },
 
-    // onDragEnd() {
-    //   this.coordinates = this.marker.getLngLat();
-    //   this.$store.dispatch("locations/get", this.coordinates)
-    //   console.log(this.items );
-    //   this.inputs.address = this.items.features[0].place_name
-    // },
-
-    onAddressChange() {
-      this.search.addEventListener("retrieve", (event) => {
-        console.log(event);
-        this.coordinates = event.detail.features[0].geometry.coordinates;
-        this.map.easeTo({
-          center: this.coordinates,
-          zoom: 15,
-          speed: 3,
-          duration: 2500,
-          curve: 2,
-        });
-        console.log(this.coordinates)
-      });
-      console.log(this.marker);
-    },
+    async getAddress(){
+      await this.$store.dispatch("locations/get", this.coordinates)
+      this.inputs.address = this.items.features[0].place_name
+  },
 
     filterData(){
             this.geojson.forEach(item => {
                 let itemArray = [item.lng,item.lat];
                 this.geojsonArrays.push(itemArray);
             });
-            console.log(this.geojsonArrays);
         }
 
 
@@ -263,7 +261,8 @@ export default {
   watch: {
     coordinates: {
       deep: true,
-      handler(value, old) {   
+      handler(value, old) {
+        this.getAddress();
         this.marker.setLngLat(this.coordinates);
         this.map.easeTo({
           center: this.coordinates,
