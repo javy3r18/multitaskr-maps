@@ -88,7 +88,8 @@
 </template>
 
 <script>
-import {mapGetters} from 'vuex'
+import { mapGetters } from "vuex";
+import { Source } from "webpack-sources";
 export default {
   data() {
     return {
@@ -103,14 +104,13 @@ export default {
         city: null,
         state: null,
         country: null,
-        postcode: null
+        postcode: null,
       },
       coordinates: {
         lng: -117.04342,
         lat: 32.55252,
       },
       geojsonArrays: [],
-
     };
   },
 
@@ -123,10 +123,9 @@ export default {
 
   computed: {
     ...mapGetters({
-            items: "locations/items",
-            geojson: "geojson/geojson",
-        }),
-
+      items: "locations/items",
+      geojson: "geojson/geojson",
+    }),
   },
 
   methods: {
@@ -151,64 +150,63 @@ export default {
         zoom: 11,
         center: this.coordinates,
       });
-      
+
       this.map.on("load", () => {
-                // Insert the layer beneath any symbol layer.
-                const layers = this.map.getStyle().layers;
-                const labelLayerId = layers.find(
-                    (layer) =>
-                        layer.type === "symbol" && layer.layout["text-field"]
-                ).id;
-                // The 'building' layer in the Mapbox Streets
-                // vector tileset contains building height data
-                // from OpenStreetMap.
-                
-                
-            });
+        // Insert the layer beneath any symbol layer.
+        const layers = this.map.getStyle().layers;
+        const labelLayerId = layers.find(
+          (layer) => layer.type === "symbol" && layer.layout["text-field"]
+        ).id;
+        // The 'building' layer in the Mapbox Streets
+        // vector tileset contains building height data
+        // from OpenStreetMap.
+      });
     },
 
+    addPolygon() {
+      if (this.map.getSource("maine")) {
+        this.map.removeLayer("maine");
+        this.map.removeLayer("outline");
+        this.map.removeSource("maine");
+      }
 
-
-  addPolygon() {
-            this.map.addSource("maine", {
-                type: "geojson",
-                data: {
-                    type: "Feature",
-                    geometry: {
-                        type: "Polygon",
-                        // These coordinates outline Maine.
-                        coordinates: [
-                            this.geojsonArrays
-                        ],
-                    },
-                },
-            });
-            // Add a new layer to visualize the polygon.
-            this.map.addLayer({
-                id: "maine",
-                type: "fill",
-                source: "maine", // reference the data source
-                layout: {},
-                paint: {
-                    "fill-color": "green", // blue color fill
-                    "fill-opacity": 0.5,
-                },
-            });
-            // Add a black outline around the polygon.
-            this.map.addLayer({
-                id: "outline",
-                type: "line",
-                source: "maine",
-                layout: {},
-                paint: {
-                    "line-color": "#072E01",
-                    "line-width": 3,
-                },
-            });
+      this.map.addSource("maine", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            // These coordinates outline Maine.
+            coordinates: [this.geojsonArrays],
+          },
         },
+      });
 
+      // Add a new layer to visualize the polygon.
+      this.map.addLayer({
+        id: "maine",
+        type: "fill",
+        source: "maine", // reference the data source
+        layout: {},
+        paint: {
+          "fill-color": "green", // blue color fill
+          "fill-opacity": 0.5,
+        },
+      });
+      // Add a black outline around the polygon.
+      this.map.addLayer({
+        id: "outline",
+        type: "line",
+        source: "maine",
+        layout: {},
+        paint: {
+          "line-color": "#072E01",
+          "line-width": 3,
+        },
+      });
+    },
 
-        setNewMarker() {
+    setNewMarker() {
       this.marker = new this.$mapboxgl.Marker({
         color: "red",
         draggable: true,
@@ -217,47 +215,45 @@ export default {
         .addTo(this.map);
 
       this.marker.on("dragend", this.onDragEnd);
-  },
+    },
 
-  setAutoFill() {
-    this.search = this.$search.autofill({
-      accessToken: this.access_token,
-      options: { country: "us" },
-    });
-  },
-
-  onDragEnd() {
-    this.coordinates = this.marker.getLngLat();
-  },
-
-  onAddressChange() {
-    this.search.addEventListener("retrieve", (event) => {
-      this.coordinates = event.detail.features[0].geometry.coordinates;
-      this.addPolygon();
-      this.map.easeTo({
-        center: this.coordinates,
-        zoom: 15,
-        speed: 3,
-        duration: 2500,
-        curve: 2,
+    setAutoFill() {
+      this.search = this.$search.autofill({
+        accessToken: this.access_token,
+        options: { country: "us" },
       });
-    });
-  },
+    },
 
-    async getAddress(){
-      await this.$store.dispatch("locations/get", this.coordinates)
-      this.inputs.address = this.items.features[0].place_name
+    onDragEnd() {
+      this.coordinates = this.marker.getLngLat();
+    },
+
+    onAddressChange() {
+      this.search.addEventListener("retrieve", (event) => {
+        this.coordinates = event.detail.features[0].geometry.coordinates;
+        this.map.easeTo({
+          center: this.coordinates,
+          zoom: 15,
+          speed: 3,
+          duration: 2500,
+          curve: 2,
+        });
+        this.addPolygon();
+      });
+    },
+
+    async getAddress() {
+      await this.$store.dispatch("locations/get", this.coordinates);
+      this.inputs.address = this.items.features[0].place_name;
       this.addPolygon();
-  },
+    },
 
-    filterData(){
-            this.geojson.forEach(item => {
-                let itemArray = [item.lng,item.lat];
-                this.geojsonArrays.push(itemArray);
-            });
-        }
-
-
+    filterData() {
+      this.geojson.forEach((item) => {
+        let itemArray = [item.lng, item.lat];
+        this.geojsonArrays.push(itemArray);
+      });
+    },
   },
 
   watch: {
@@ -282,7 +278,6 @@ export default {
         this.onAddressChange();
       },
     },
-
   },
 };
 </script>
