@@ -163,7 +163,7 @@ export default {
                 // vector tileset contains building height data
                 // from OpenStreetMap.
                 
-                this.addPolygon();
+                
             });
     },
 
@@ -233,6 +233,7 @@ export default {
   onAddressChange() {
     this.search.addEventListener("retrieve", (event) => {
       this.coordinates = event.detail.features[0].geometry.coordinates;
+      this.addPolygon();
       this.map.easeTo({
         center: this.coordinates,
         zoom: 15,
@@ -246,6 +247,7 @@ export default {
     async getAddress(){
       await this.$store.dispatch("locations/get", this.coordinates)
       this.inputs.address = this.items.features[0].place_name
+      this.addPolygon();
   },
 
     filterData(){
