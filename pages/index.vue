@@ -119,13 +119,13 @@ export default {
     this.createMap();
     this.setNewMarker();
     this.setAutoFill();
-    this.filterData();
   },
 
   computed: {
     ...mapGetters({
       items: "locations/items",
       geojson: "geojson/geojson",
+      polygons: "polygons/polygons",
     }),
   },
 
@@ -148,16 +148,21 @@ export default {
       this.map = new this.$mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/mapbox/streets-v11",
-        zoom: 15,
+        zoom: 16,
         center: this.coordinates,
       });
 
-      this.map.on("click", "building", (event) => {
-        let bounds = this.polygon.getBounds();
-        let center = bounds.getCenter();
-        console.log(center);
-        this.coordinates = center;
-        console.log(this.coordinates);
+      this.map.on("click", "building", async (event) => {
+        let params = {
+          lat: event.lngLat.lat,
+          lng: event.lngLat.lng,
+        };
+        await this.$store.dispatch("polygons/get", params);
+        let geojson = JSON.parse(this.polygons.geojson);
+        let parseJson = geojson.coordinates[0]
+        this.filterData(parseJson);
+        this.addParcel(this.geojsonArrays);
+        this.buildingZoom(this.geojsonArrays);
       });
 
       this.map.on("load", () => {
@@ -331,6 +336,12 @@ export default {
       this.marker.on("dragend", this.onDragEnd);
     },
 
+    buildingZoom(coordinates) {
+      this.map.fitBounds(coordinates, {
+        zoom: 19,
+      })
+    },
+
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
@@ -344,7 +355,8 @@ export default {
 
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
-        this.coordinates = event.detail.features[0].geometry.coordinates;
+        this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
+        this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
         console.log(this.coordinates);
         this.map.easeTo({
           center: this.coordinates,
@@ -358,14 +370,61 @@ export default {
     },
 
     async getAddress() {
-      await this.$store.dispatch("locations/get", this.coordinates);
+      let params = {
+        lat: this.coordinates.lat,
+        lng: this.coordinates.lng,
+      };
+      await this.$store.dispatch("locations/get", params);
       this.inputs.address = this.items.features[0].place_name;
       // this.addPolygon();
     },
 
-    filterData() {
-      this.geojson.forEach((item) => {
-        let itemArray = [item.lng, item.lat];
+    addParcel(coordinates) {
+      if (this.map.getSource("parcel")) {
+        this.map.removeLayer("parcelLayer");
+        this.map.removeLayer("outline");
+        this.map.removeSource("parcel");
+      }
+
+      this.map.addSource("parcel", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            // These coordinates outline Maine.
+            coordinates: [coordinates],
+          },
+        },
+      });
+
+      this.map.addLayer({
+        id: "parcelLayer",
+        type: "fill",
+        source: "parcel", // reference the data source
+        layout: {},
+        paint: {
+          "fill-color": "#0080ff", // blue color fill
+          "fill-opacity": 0.5,
+        },
+      });
+
+      this.map.addLayer({
+        id: "outline",
+        type: "line",
+        source: "parcel",
+        layout: {},
+        paint: {
+          "line-color": "#000",
+          "line-width": 3,
+        },
+      });
+    },
+
+    filterData(parseJson) {
+      this.geojsonArrays = []
+      parseJson.forEach((item) => {
+        let itemArray = [item[1], item[0]];
         this.geojsonArrays.push(itemArray);
       });
     },
@@ -394,6 +453,7 @@ export default {
         this.onAddressChange();
       },
     },
+
   },
 };
 </script>
