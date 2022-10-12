@@ -89,7 +89,6 @@
 
 <script>
 import { mapGetters } from "vuex";
-import { Source } from "webpack-sources";
 export default {
   data() {
     return {
@@ -110,7 +109,9 @@ export default {
         lng: -117.04342,
         lat: 32.55252,
       },
+      polygon: null,
       geojsonArrays: [],
+      hoveredStateId: null,
     };
   },
 
@@ -146,65 +147,178 @@ export default {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi",
-        zoom: 11,
+        style: "mapbox://styles/mapbox/streets-v11",
+        zoom: 15,
         center: this.coordinates,
       });
 
+      this.map.on("click", "building", (event) => {
+        let bounds = this.polygon.getBounds();
+        let center = bounds.getCenter();
+        console.log(center);
+        this.coordinates = center;
+        console.log(this.coordinates);
+      });
+
       this.map.on("load", () => {
-        // Insert the layer beneath any symbol layer.
-        const layers = this.map.getStyle().layers;
-        const labelLayerId = layers.find(
-          (layer) => layer.type === "symbol" && layer.layout["text-field"]
-        ).id;
-        // The 'building' layer in the Mapbox Streets
-        // vector tileset contains building height data
-        // from OpenStreetMap.
-      });
-    },
+        this.map.removeLayer("building");
 
-    addPolygon() {
-      if (this.map.getSource("maine")) {
-        this.map.removeLayer("maine");
-        this.map.removeLayer("outline");
-        this.map.removeSource("maine");
-      }
+        this.map.addSource("mapbox-streets", {
+          type: "vector",
+          url: "mapbox://mapbox.mapbox-streets-v8",
+          generateId: true,
+        });
 
-      this.map.addSource("maine", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            // These coordinates outline Maine.
-            coordinates: [this.geojsonArrays],
+        this.polygon = this.map.addLayer({
+          id: "building",
+          generateId: true,
+          source: "mapbox-streets",
+          "source-layer": "building",
+          type: "fill",
+          paint: {
+            "fill-color": "rgba(66,100,251, 0.3)",
+            "fill-outline-color": "rgba(66,100,251, 1)",
+            "fill-opacity": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false],
+              1,
+              0.5,
+            ],
           },
-        },
-      });
+        });
 
-      // Add a new layer to visualize the polygon.
-      this.map.addLayer({
-        id: "maine",
-        type: "fill",
-        source: "maine", // reference the data source
-        layout: {},
-        paint: {
-          "fill-color": "green", // blue color fill
-          "fill-opacity": 0.5,
-        },
-      });
-      // Add a black outline around the polygon.
-      this.map.addLayer({
-        id: "outline",
-        type: "line",
-        source: "maine",
-        layout: {},
-        paint: {
-          "line-color": "#072E01",
-          "line-width": 3,
-        },
+        this.map.on("mousemove", "building", (e) => {
+          if (e.features.length > 0) {
+            if (this.hoveredStateId !== null) {
+              this.map.setFeatureState(
+                {
+                  source: "mapbox-streets",
+                  sourceLayer: "building",
+                  id: this.hoveredStateId,
+                },
+                { hover: false }
+              );
+            }
+            this.hoveredStateId = e.features[0].id;
+            this.map.setFeatureState(
+              {
+                source: "mapbox-streets",
+                sourceLayer: "building",
+                id: this.hoveredStateId,
+              },
+              { hover: true }
+            );
+          }
+        });
+
+        this.map.on("mouseleave", "building", () => {
+          if (this.hoveredStateId !== null) {
+            this.map.setFeatureState(
+              {
+                source: "mapbox-streets",
+                sourceLayer: "building",
+                id: this.hoveredStateId,
+              },
+              { hover: false }
+            );
+          }
+          this.hoveredStateId = null;
+        });
       });
     },
+
+    // addPolygon() {
+    //   // if (this.map.getSource("maine")) {
+    //   //   this.map.removeLayer("maine");
+    //   //   this.map.removeLayer("outline");
+    //   //   this.map.removeSource("maine");
+    //   // }
+    //   this.map.removeLayer("building");
+
+    //   this.map.addSource("mapbox-streets", {
+    //     type: "vector",
+    //     url: "mapbox://mapbox.mapbox-streets-v8",
+    //     generateId: true,
+    //   });
+
+    //   this.map.addLayer({
+    //     id: "building",
+    //     source: "mapbox-streets",
+    //     "source-layer": "building",
+    //     type: "fill",
+    //     paint: {
+    //       "fill-color": "rgba(66,100,251, 0.3)",
+    //       "fill-outline-color": "rgba(66,100,251, 1)",
+    //       "fill-opacity": [
+    //         "case",
+    //         ["boolean", ["feature-state", "hover"], false],
+    //         1,
+    //         0.5,
+    //       ],
+    //     },
+    //   });
+
+    //   this.map.on("mousemove", "building", (e) => {
+    //     if (e.features.length > 0) {
+    //       if (this.hoveredStateId !== null) {
+    //         this.map.setFeatureState(
+    //           {
+    //             source: "mapbox-streets",
+    //             sourceLayer: "building",
+    //             id: this.hoveredStateId,
+    //           },
+    //           { hover: false }
+    //         );
+    //       }
+    //       this.hoveredStateId = e.features[0].id;
+    //       this.map.setFeatureState(
+    //         {
+    //           source: "mapbox-streets",
+    //           sourceLayer: "building",
+    //           id: this.hoveredStateId,
+    //         },
+    //         { hover: true }
+    //       );
+    //     }
+    //   });
+
+    //   this.map.on("mouseleave", "building", () => {
+    //     if (this.hoveredStateId !== null) {
+    //       this.map.setFeatureState(
+    //         {
+    //           source: "mapbox-streets",
+    //           sourceLayer: "building",
+    //           id: this.hoveredStateId,
+    //         },
+    //         { hover: false }
+    //       );
+    //     }
+    //     this.hoveredStateId = null;
+    //   });
+
+    //   // Add a new layer to visualize the polygon.
+    //   // this.map.addLayer({
+    //   //   id: "maine",
+    //   //   type: "fill",
+    //   //   source: "maine", // reference the data source
+    //   //   layout: {},
+    //   //   paint: {
+    //   //     "fill-color": "green", // blue color fill
+    //   //     "fill-opacity": 0.5,
+    //   //   },
+    //   // });
+    //   // Add a black outline around the polygon.
+    //   //   this.map.addLayer({
+    //   //     id: "outline",
+    //   //     type: "line",
+    //   //     source: "maine",
+    //   //     layout: {},
+    //   //     paint: {
+    //   //       "line-color": "#072E01",
+    //   //       "line-width": 3,
+    //   //     },
+    //   //   });
+    // },
 
     setNewMarker() {
       this.marker = new this.$mapboxgl.Marker({
@@ -231,6 +345,7 @@ export default {
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates = event.detail.features[0].geometry.coordinates;
+        console.log(this.coordinates);
         this.map.easeTo({
           center: this.coordinates,
           zoom: 15,
@@ -245,7 +360,7 @@ export default {
     async getAddress() {
       await this.$store.dispatch("locations/get", this.coordinates);
       this.inputs.address = this.items.features[0].place_name;
-      this.addPolygon();
+      // this.addPolygon();
     },
 
     filterData() {
@@ -262,9 +377,10 @@ export default {
       handler(value, old) {
         this.getAddress();
         this.marker.setLngLat(this.coordinates);
+        console.log(this.marker.getLngLat());
         this.map.easeTo({
           center: this.coordinates,
-          zoom: 15,
+          zoom: 16,
           speed: 3,
           duration: 2500,
           curve: 2,
