@@ -109,8 +109,6 @@ export default {
       });
 
       this.map.on("load", () => {
-
-        let description = null
         this.map.removeLayer("building");
 
         this.map.addSource("mapbox-streets", {
@@ -175,35 +173,32 @@ export default {
           this.hoveredStateId = null;
         });
 
-
         const popup = new this.$mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
       });
 
-      
-      this.map.on("mouseenter", "building", (e) => {
-
+      this.map.on("mouseenter", "building", async (e) => {
         this.map.getCanvas().style.cursor = "pointer";
 
         const coordinates = e.lngLat;
-        description = null
-        this.getAddressHover(coordinates);
-        
-        description = this.hoverlocation.features[0].place_name
-        // const description = e.features[0].properties.description;
-
-        popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
+        let params = {
+          lat: coordinates.lat,
+          lng: coordinates.lng
+        };
+        await this.$store.dispatch("locationhover/get", params);
+        let description = this.hoverlocation.features[0].place_name
+        popup
+          .setLngLat(coordinates)
+          .setHTML(description)
+          .addTo(this.map);
       });
 
       this.map.on("mouseleave", "building", () => {
-        description = null
         this.map.getCanvas().style.cursor = "";
         popup.remove();
       });
       });
-
-      
 
       this.initHoverBuilding(this.map);
     },
@@ -348,12 +343,8 @@ export default {
       // this.addPolygon();
     },
 
-    async getAddressHover(coordinates){
-      let params = {
-        lat: coordinates.lat,
-        lng: coordinates.lng,
-      };
-      await this.$store.dispatch("locationhover/get", params);
+    async getAddressHover() {
+      
     },
 
     addParcel(coordinates) {
