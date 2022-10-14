@@ -12,46 +12,6 @@
               type="text"
               autocomplete="address-line1"
             />
-            <input
-              v-model="inputs.aparment"
-              class="my-2"
-              name="apartment"
-              placeholder="Apartment number"
-              type="text"
-              autocomplete="address-line2"
-            />
-            <input
-              v-model="inputs.city"
-              class="my-2"
-              name="city"
-              placeholder="City"
-              type="text"
-              autocomplete="address-level2"
-            />
-            <input
-              v-model="inputs.state"
-              class="my-2"
-              name="state"
-              placeholder="State"
-              type="text"
-              autocomplete="address-level1"
-            />
-            <input
-              v-model="inputs.country"
-              class="my-2"
-              name="country"
-              placeholder="Country"
-              type="text"
-              autocomplete="country"
-            />
-            <input
-              v-model="inputs.postcode"
-              class="my-2"
-              name="postcode"
-              placeholder="Postcode"
-              type="text"
-              autocomplete="postal-code"
-            />
           </form>
         </div>
         <div class="m-3">
@@ -99,11 +59,6 @@ export default {
       search: {},
       inputs: {
         address: null,
-        aparment: null,
-        city: null,
-        state: null,
-        country: null,
-        postcode: null,
       },
       coordinates: {
         lng: -117.04342,
@@ -124,25 +79,13 @@ export default {
   computed: {
     ...mapGetters({
       items: "locations/items",
+      hoverlocation: "locationhover/items",
       geojson: "geojson/geojson",
       polygons: "polygons/polygons",
     }),
   },
 
   methods: {
-    // init() {
-    //   let successCallback = (location) => {
-    //     this.success = true;
-    //     this.coordinates.lat = location.coords.latitude;
-    //     this.coordinates.lng = location.coords.longitude;
-    //     this.createMap();
-    //   };
-    //   let errorCallback = (location) => {
-    //     console.log("Error Location");
-    //   };
-    //   navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
-    // },
-
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
@@ -159,13 +102,15 @@ export default {
         };
         await this.$store.dispatch("polygons/get", params);
         let geojson = JSON.parse(this.polygons.geojson);
-        let parseJson = geojson.coordinates[0]
+        let parseJson = geojson.coordinates[0];
         this.filterData(parseJson);
         this.addParcel(this.geojsonArrays);
         this.buildingZoom(this.geojsonArrays);
       });
 
       this.map.on("load", () => {
+
+        let description = null
         this.map.removeLayer("building");
 
         this.map.addSource("mapbox-streets", {
@@ -229,101 +174,125 @@ export default {
           }
           this.hoveredStateId = null;
         });
+
+
+        const popup = new this.$mapboxgl.Popup({
+        closeButton: false,
+        closeOnClick: false,
       });
+
+      
+      this.map.on("mouseenter", "building", (e) => {
+
+        this.map.getCanvas().style.cursor = "pointer";
+
+        const coordinates = e.lngLat;
+        description = null
+        this.getAddressHover(coordinates);
+        
+        description = this.hoverlocation.features[0].place_name
+        // const description = e.features[0].properties.description;
+
+        popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
+      });
+
+      this.map.on("mouseleave", "building", () => {
+        description = null
+        this.map.getCanvas().style.cursor = "";
+        popup.remove();
+      });
+      });
+
+      
+
+      this.initHoverBuilding(this.map);
     },
 
-    // addPolygon() {
-    //   // if (this.map.getSource("maine")) {
-    //   //   this.map.removeLayer("maine");
-    //   //   this.map.removeLayer("outline");
-    //   //   this.map.removeSource("maine");
-    //   // }
-    //   this.map.removeLayer("building");
-
-    //   this.map.addSource("mapbox-streets", {
-    //     type: "vector",
-    //     url: "mapbox://mapbox.mapbox-streets-v8",
-    //     generateId: true,
-    //   });
-
-    //   this.map.addLayer({
-    //     id: "building",
-    //     source: "mapbox-streets",
-    //     "source-layer": "building",
-    //     type: "fill",
-    //     paint: {
-    //       "fill-color": "rgba(66,100,251, 0.3)",
-    //       "fill-outline-color": "rgba(66,100,251, 1)",
-    //       "fill-opacity": [
-    //         "case",
-    //         ["boolean", ["feature-state", "hover"], false],
-    //         1,
-    //         0.5,
-    //       ],
-    //     },
-    //   });
-
-    //   this.map.on("mousemove", "building", (e) => {
-    //     if (e.features.length > 0) {
-    //       if (this.hoveredStateId !== null) {
-    //         this.map.setFeatureState(
-    //           {
-    //             source: "mapbox-streets",
-    //             sourceLayer: "building",
-    //             id: this.hoveredStateId,
-    //           },
-    //           { hover: false }
-    //         );
-    //       }
-    //       this.hoveredStateId = e.features[0].id;
-    //       this.map.setFeatureState(
-    //         {
-    //           source: "mapbox-streets",
-    //           sourceLayer: "building",
-    //           id: this.hoveredStateId,
-    //         },
-    //         { hover: true }
-    //       );
-    //     }
-    //   });
-
-    //   this.map.on("mouseleave", "building", () => {
-    //     if (this.hoveredStateId !== null) {
-    //       this.map.setFeatureState(
-    //         {
-    //           source: "mapbox-streets",
-    //           sourceLayer: "building",
-    //           id: this.hoveredStateId,
-    //         },
-    //         { hover: false }
-    //       );
-    //     }
-    //     this.hoveredStateId = null;
-    //   });
-
-    //   // Add a new layer to visualize the polygon.
-    //   // this.map.addLayer({
-    //   //   id: "maine",
-    //   //   type: "fill",
-    //   //   source: "maine", // reference the data source
-    //   //   layout: {},
-    //   //   paint: {
-    //   //     "fill-color": "green", // blue color fill
-    //   //     "fill-opacity": 0.5,
-    //   //   },
-    //   // });
-    //   // Add a black outline around the polygon.
-    //   //   this.map.addLayer({
-    //   //     id: "outline",
-    //   //     type: "line",
-    //   //     source: "maine",
-    //   //     layout: {},
-    //   //     paint: {
-    //   //       "line-color": "#072E01",
-    //   //       "line-width": 3,
-    //   //     },
-    //   //   });
-    // },
+    initHoverBuilding(map) {
+      map.on("style.load", function () {
+        const layers = map.getStyle().layers;
+        const labelLayerId = layers.find(
+          (layer) => layer.type === "symbol" && layer.layout["text-field"]
+        ).id;
+        if (map.getSource("composite")) {
+          map.addLayer(
+            {
+              id: "3d-buildings",
+              source: "composite",
+              "source-layer": "building",
+              filter: ["==", "extrude", "true"],
+              type: "fill-extrusion",
+              minzoom: 15,
+              paint: {
+                "fill-extrusion-color": [
+                  "case",
+                  ["boolean", ["feature-state", "hover"], false],
+                  "#aaa",
+                  "#aaa",
+                ],
+                "fill-extrusion-height": [
+                  "case",
+                  ["boolean", ["feature-state", "hover"], false],
+                  ["get", "height"],
+                  0,
+                ],
+                "fill-extrusion-base": [
+                  "case",
+                  ["boolean", ["feature-state", "hover"], false],
+                  ["get", "base_height"],
+                  0,
+                ],
+              },
+            },
+            labelLayerId
+          );
+        }
+        let fHover;
+        map.on("mousemove", function (e) {
+          //157001066
+          var features = map.queryRenderedFeatures(e.point, {
+            layers: ["3d-buildings"],
+          });
+          if (features[0]) {
+            mouseout();
+            mouseover(features[0]);
+          } else {
+            mouseout();
+          }
+        });
+        map.on("mouseout", function (e) {
+          mouseout();
+        });
+        function mouseout() {
+          if (!fHover) return;
+          map.getCanvasContainer().style.cursor = "default";
+          map.setFeatureState(
+            {
+              source: fHover.source,
+              sourceLayer: fHover.sourceLayer,
+              id: fHover.id,
+            },
+            {
+              hover: false,
+            }
+          );
+        }
+        function mouseover(feature) {
+          fHover = feature;
+          map.getCanvasContainer().style.cursor = "pointer";
+          map.setFeatureState(
+            {
+              source: fHover.source,
+              sourceLayer: fHover.sourceLayer,
+              id: fHover.id,
+            },
+            {
+              hover: true,
+            }
+          );
+        }
+      });
+    },
 
     setNewMarker() {
       this.marker = new this.$mapboxgl.Marker({
@@ -339,7 +308,7 @@ export default {
     buildingZoom(coordinates) {
       this.map.fitBounds(coordinates, {
         zoom: 19,
-      })
+      });
     },
 
     setAutoFill() {
@@ -379,10 +348,18 @@ export default {
       // this.addPolygon();
     },
 
+    async getAddressHover(coordinates){
+      let params = {
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+      };
+      await this.$store.dispatch("locationhover/get", params);
+    },
+
     addParcel(coordinates) {
       if (this.map.getSource("parcel")) {
         this.map.removeLayer("parcelLayer");
-        this.map.removeLayer("outline");
+        // this.map.removeLayer("outline");
         this.map.removeSource("parcel");
       }
 
@@ -408,21 +385,10 @@ export default {
           "fill-opacity": 0.5,
         },
       });
-
-      this.map.addLayer({
-        id: "outline",
-        type: "line",
-        source: "parcel",
-        layout: {},
-        paint: {
-          "line-color": "#000",
-          "line-width": 3,
-        },
-      });
     },
 
     filterData(parseJson) {
-      this.geojsonArrays = []
+      this.geojsonArrays = [];
       parseJson.forEach((item) => {
         let itemArray = [item[1], item[0]];
         this.geojsonArrays.push(itemArray);
@@ -453,7 +419,6 @@ export default {
         this.onAddressChange();
       },
     },
-
   },
 };
 </script>
