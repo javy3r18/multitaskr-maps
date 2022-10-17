@@ -69,13 +69,11 @@ export default {
       hoveredStateId: null,
     };
   },
-
   mounted() {
     this.createMap();
     this.setNewMarker();
     this.setAutoFill();
   },
-
   computed: {
     ...mapGetters({
       items: "locations/items",
@@ -84,17 +82,16 @@ export default {
       polygons: "polygons/polygons",
     }),
   },
-
   methods: {
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/mapbox/streets-v11",
+        style: "mapbox://styles/javy3r18/cl9dadrif008314pd2aja3j6t",
         zoom: 16,
         center: this.coordinates,
       });
-
+      
       this.map.on("click", "building", async (event) => {
         let params = {
           lat: event.lngLat.lat,
@@ -108,33 +105,77 @@ export default {
         this.buildingZoom(this.geojsonArrays);
       });
 
+      this.map.on("mouseenter", 'test', (e) => {
+        let content = this.map.queryRenderedFeatures(e.point, {
+          layers: ['test']
+        })
+        console.log(content);
+      })
       this.map.on("load", () => {
-        this.map.removeLayer("building");
+        // this.map.removeLayer("building");
 
-        this.map.addSource("mapbox-streets", {
-          type: "vector",
-          url: "mapbox://mapbox.mapbox-streets-v8",
-          generateId: true,
+
+        this.map.on("mousemove", "building", (e) => {
+          if (e.features.length > 0) {
+            if (this.hoveredStateId !== null) {
+              this.map.setFeatureState(
+                {
+                  source: "test",
+                  sourceLayer: "building",
+                  id: this.hoveredStateId,
+                },
+                { hover: false }
+              );
+            }
+            this.hoveredStateId = e.features[0].id;
+            this.map.setFeatureState(
+              {
+                source: "mapbox-streets",
+                sourceLayer: "building",
+                id: this.hoveredStateId,
+              },
+              { hover: true }
+            );
+          }
+        });
+        this.map.on("mouseleave", "building", () => {
+          if (this.hoveredStateId !== null) {
+            this.map.setFeatureState(
+              {
+                source: "mapbox-streets",
+                sourceLayer: "building",
+                id: this.hoveredStateId,
+              },
+              { hover: false }
+            );
+          }
+          this.hoveredStateId = null;
         });
 
-        this.polygon = this.map.addLayer({
-          id: "building",
-          generateId: true,
-          source: "mapbox-streets",
-          "source-layer": "building",
-          type: "fill",
-          paint: {
-            "fill-color": "rgba(66,100,251, 0.3)",
-            "fill-outline-color": "rgba(66,100,251, 1)",
-            "fill-opacity": [
-              "case",
-              ["boolean", ["feature-state", "hover"], false],
-              1,
-              0.5,
-            ],
-          },
-        });
 
+
+        // this.map.addSource("mapbox-streets", {
+        //   type: "vector",
+        //   url: "mapbox://mapbox.mapbox-streets-v8",
+        //   generateId: true,
+        // });
+        // this.polygon = this.map.addLayer({
+        //   id: "building",
+        //   generateId: true,
+        //   source: "mapbox-streets",
+        //   "source-layer": "building",
+        //   type: "fill",
+        //   paint: {
+        //     "fill-color": "rgba(66,100,251, 0.3)",
+        //     "fill-outline-color": "rgba(66,100,251, 1)",
+        //     "fill-opacity": [
+        //       "case",
+        //       ["boolean", ["feature-state", "hover"], false],
+        //       1,
+        //       0.5,
+        //     ],
+        //   },
+        // });
         this.map.on("mousemove", "building", (e) => {
           if (e.features.length > 0) {
             if (this.hoveredStateId !== null) {
@@ -158,7 +199,6 @@ export default {
             );
           }
         });
-
         this.map.on("mouseleave", "building", () => {
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
@@ -172,37 +212,28 @@ export default {
           }
           this.hoveredStateId = null;
         });
-
         const popup = new this.$mapboxgl.Popup({
-        closeButton: false,
-        closeOnClick: false,
+          closeButton: false,
+          closeOnClick: false,
+        });
+        this.map.on("mouseenter", "building", async (e) => {
+          this.map.getCanvas().style.cursor = "pointer";
+          const coordinates = e.lngLat;
+          let params = {
+            lat: coordinates.lat,
+            lng: coordinates.lng,
+          };
+          await this.$store.dispatch("locationhover/get", params);
+          let description = this.hoverlocation.features[0].place_name;
+          popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
+        });
+        this.map.on("mouseleave", "building", () => {
+          this.map.getCanvas().style.cursor = "";
+          popup.remove();
+        });
       });
-
-      this.map.on("mouseenter", "building", async (e) => {
-        this.map.getCanvas().style.cursor = "pointer";
-
-        const coordinates = e.lngLat;
-        let params = {
-          lat: coordinates.lat,
-          lng: coordinates.lng
-        };
-        await this.$store.dispatch("locationhover/get", params);
-        let description = this.hoverlocation.features[0].place_name
-        popup
-          .setLngLat(coordinates)
-          .setHTML(description)
-          .addTo(this.map);
-      });
-
-      this.map.on("mouseleave", "building", () => {
-        this.map.getCanvas().style.cursor = "";
-        popup.remove();
-      });
-      });
-
       this.initHoverBuilding(this.map);
     },
-
     initHoverBuilding(map) {
       map.on("style.load", function () {
         const layers = map.getStyle().layers;
@@ -288,7 +319,6 @@ export default {
         }
       });
     },
-
     setNewMarker() {
       this.marker = new this.$mapboxgl.Marker({
         color: "red",
@@ -296,27 +326,22 @@ export default {
       })
         .setLngLat(this.coordinates)
         .addTo(this.map);
-
       this.marker.on("dragend", this.onDragEnd);
     },
-
     buildingZoom(coordinates) {
       this.map.fitBounds(coordinates, {
         zoom: 19,
       });
     },
-
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
         options: { country: "us" },
       });
     },
-
     onDragEnd() {
       this.coordinates = this.marker.getLngLat();
     },
-
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
@@ -332,7 +357,6 @@ export default {
         this.addPolygon();
       });
     },
-
     async getAddress() {
       let params = {
         lat: this.coordinates.lat,
@@ -342,18 +366,13 @@ export default {
       this.inputs.address = this.items.features[0].place_name;
       // this.addPolygon();
     },
-
-    async getAddressHover() {
-      
-    },
-
+    async getAddressHover() {},
     addParcel(coordinates) {
       if (this.map.getSource("parcel")) {
         this.map.removeLayer("parcelLayer");
         // this.map.removeLayer("outline");
         this.map.removeSource("parcel");
       }
-
       this.map.addSource("parcel", {
         type: "geojson",
         data: {
@@ -365,7 +384,6 @@ export default {
           },
         },
       });
-
       this.map.addLayer({
         id: "parcelLayer",
         type: "fill",
@@ -377,7 +395,6 @@ export default {
         },
       });
     },
-
     filterData(parseJson) {
       this.geojsonArrays = [];
       parseJson.forEach((item) => {
@@ -386,7 +403,6 @@ export default {
       });
     },
   },
-
   watch: {
     coordinates: {
       deep: true,
@@ -403,7 +419,6 @@ export default {
         });
       },
     },
-
     search: {
       deep: true,
       handler(value, old) {

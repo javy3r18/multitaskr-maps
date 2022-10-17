@@ -1,15 +1,10 @@
 {
     "version": 1,
     "layers": {
-      "populated_palces": {
-        "source": "mapbox://tileset-source/javy3r18/populated-places-source",
-        "minzoom": 0,
-        "maxzoom": 5,
-        "features": {
-            "attributes":{
-                "allowed_output": ["SCALERANK", "NAME"]
-            }
-        }
+      "test": {
+        "source": "mapbox://tileset-source/javy3r18/parcel",
+        "minzoom": 14,
+        "maxzoom": 16
       }
     }
   }
