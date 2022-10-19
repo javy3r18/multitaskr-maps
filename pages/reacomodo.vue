@@ -155,7 +155,7 @@ export default {
         });
 
         this.map.on("mouseleave", "county_sandiego_city_sandiego", () => {
-          this.popup.remove();
+          this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
           this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
