@@ -83,15 +83,15 @@ export default {
 
         this.map.addSource("parceltest2", {
           type: "vector",
-          url: "mapbox://javy3r18.parceltest2",
+          url: "mapbox://martoast.county_sandiego_city_sandiego",
           generateId: true,
         });
 
         this.map.addLayer({
-          id: "test",
+          id: "county_sandiego_city_sandiego",
           generateId: true,
           source: "parceltest2",
-          "source-layer": "test",
+          "source-layer": "county_sandiego_city_sandiego",
           type: "fill",
           paint: {
             "fill-color": "#B591F9",
@@ -107,7 +107,7 @@ export default {
 
         this.map.addLayer({
           id: "parceline",
-          "source-layer": "test",
+          "source-layer": "county_sandiego_city_sandiego",
           type: "line",
           source: "parceltest2",
           layout: {},
@@ -118,11 +118,11 @@ export default {
           },
         });
 
-        this.map.moveLayer("test", "building-extrusion");
+        this.map.moveLayer("county_sandiego_city_sandiego", "building-extrusion");
 
-        this.map.on("mousemove", "test", (e) => {
+        this.map.on("mousemove", "county_sandiego_city_sandiego", (e) => {
           let content = this.map.queryRenderedFeatures(e.point, {
-            layers: ["test"],
+            layers: ["county_sandiego_city_sandiego"],
           });
           let id = content[0].id;
           if (this.mouseHover != id) {
@@ -134,7 +134,7 @@ export default {
                 this.map.setFeatureState(
                   {
                     source: "parceltest2",
-                    sourceLayer: "test",
+                    sourceLayer: "county_sandiego_city_sandiego",
                     id: this.hoveredStateId,
                   },
                   { hover: false }
@@ -144,7 +144,7 @@ export default {
               this.map.setFeatureState(
                 {
                   source: "parceltest2",
-                  sourceLayer: "test",
+                  sourceLayer: "county_sandiego_city_sandiego",
                   id: this.hoveredStateId,
                 },
                 { hover: true }
@@ -153,14 +153,14 @@ export default {
           }
         });
 
-        this.map.on("mouseleave", "test", () => {
+        this.map.on("mouseleave", "county_sandiego_city_sandiego", () => {
           this.popup.remove();
           this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
               {
                 source: "parceltest2",
-                sourceLayer: "test",
+                sourceLayer: "county_sandiego_city_sandiego",
                 id: this.hoveredStateId,
               },
               { hover: false }
@@ -268,7 +268,6 @@ export default {
     },
 
     params: debounce(async function (value) {
-        console.log("bouncing");
 
         await this.$store.dispatch("polygons/get", this.params);
         let geojson = JSON.parse(this.polygons.geojson);
