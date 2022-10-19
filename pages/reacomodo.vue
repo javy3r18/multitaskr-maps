@@ -1,7 +1,7 @@
 <template>
   <b-container fluid class="m-0 p-0">
     <b-row>
-      <b-col>
+      <b-col cols="2">
         <div class="m-3">
           <form class="d-flex flex-column">
             <input
@@ -13,31 +13,6 @@
               autocomplete="address-line1"
             />
           </form>
-        </div>
-        <div class="m-3">
-          <b-button
-            style="background-color: #4e04af"
-            @click="
-              map.setStyle('mapbox://styles/javy3r18/cl8yrxo04000014py4v4pmavh')
-            "
-            >Multitakr Style</b-button
-          >
-          <b-button
-            @click="
-              map.setStyle(
-                'mapbox://styles/elgerardo/cl8yrf6l1000e15o68btt9hgi'
-              )
-            "
-            >Normal Style</b-button
-          >
-          <b-button
-            @click="
-              map.setStyle(
-                'mapbox://styles/soloskilos/cl8ywrz0j000l14mrphfgsifg'
-              )
-            "
-            >Satelite</b-button
-          >
         </div>
       </b-col>
       <b-col cols="10">
@@ -69,6 +44,7 @@ export default {
       hoveredStateId: null,
       polygoncenter: null,
       mouseHover: null,
+      popup: null,
     };
   },
 
@@ -92,16 +68,16 @@ export default {
       this.$mapboxgl.accessToken = this.access_token;
       this.map = new this.$mapboxgl.Map({
         container: "map",
-        style: "mapbox://styles/javy3r18/cl9dadrif008314pd2aja3j6t",
+        style: "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o",
         zoom: 16,
         center: this.coordinates,
       });
 
-      
-
       this.map.on("load", () => {
-
-        this.map.removeLayer("test");
+        this.popup = new this.$mapboxgl.Popup({
+          closeButton: false,
+          closeOnClick: false,
+        });
 
         this.map.addSource("parceltest2", {
           type: "vector",
@@ -116,7 +92,7 @@ export default {
           "source-layer": "test",
           type: "fill",
           paint: {
-            "fill-color": "rgba(66,100,251, 0.3)",
+            "fill-color": "#B591F9",
             "fill-outline-color": "rgba(66,100,251, 1)",
             "fill-opacity": [
               "case",
@@ -127,40 +103,56 @@ export default {
           },
         });
 
+        this.map.addLayer({
+          id: "parceline",
+          "source-layer": "test",
+          type: "line",
+          source: "parceltest2",
+          layout: {},
+          paint: {
+            "line-dasharray": [4, 4],
+            "line-color": "#4D04AE",
+            "line-width": 2,
+          },
+        });
+
+        this.map.moveLayer("test", "building-extrusion");
+
         this.map.on("mousemove", "test", (e) => {
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["test"],
           });
-          let id = content[0].id
-          if(this.mouseHover != id){
-            this.mouseHover = content[0].id
-            
-
+          let id = content[0].id;
+          if (this.mouseHover != id) {
+            this.mouseHover = content[0].id;
+            this.showPopup(e.lngLat);
             if (e.features.length > 0) {
-            if (this.hoveredStateId !== null) {
+              if (this.hoveredStateId !== null) {
+                this.map.setFeatureState(
+                  {
+                    source: "parceltest2",
+                    sourceLayer: "test",
+                    id: this.hoveredStateId,
+                  },
+                  { hover: false }
+                );
+              }
+              this.hoveredStateId = e.features[0].id;
               this.map.setFeatureState(
                 {
                   source: "parceltest2",
                   sourceLayer: "test",
                   id: this.hoveredStateId,
                 },
-                { hover: false }
+                { hover: true }
               );
             }
-            this.hoveredStateId = e.features[0].id;
-            this.map.setFeatureState(
-              {
-                source: "parceltest2",
-                sourceLayer: "test",
-                id: this.hoveredStateId,
-              },
-              { hover: true }
-            );
-          }
           }
         });
 
         this.map.on("mouseleave", "test", () => {
+          this.popup.remove();
+          this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
               {
@@ -173,7 +165,6 @@ export default {
           }
           this.hoveredStateId = null;
         });
-
       });
     },
 
@@ -201,6 +192,31 @@ export default {
         duration: 2500,
         curve: 2,
       });
+    },
+
+    async showPopup(coordinates) {
+      let params = {
+        lat: coordinates.lat,
+        lng: coordinates.lng,
+      };
+      await this.$store.dispatch("polygons/get", params);
+      let geojson = JSON.parse(this.polygons.geojson);
+      let parseJson = geojson.coordinates[0];
+      this.geojsonArrays = [];
+      parseJson.forEach((item) => {
+        let itemArray = [item[1], item[0]];
+        this.geojsonArrays.push(itemArray);
+      });
+      const bounds = new this.$mapboxgl.LngLatBounds(
+        this.geojsonArrays[0],
+        this.geojsonArrays[0]
+      );
+      for (const coord of this.geojsonArrays) {
+        bounds.extend(coord);
+      }
+      let center = bounds;
+
+      this.popup.setLngLat(center.getCenter()).setHTML("Example").addTo(this.map);
     },
 
     onAddressChange() {
