@@ -119,6 +119,7 @@ export default {
         });
 
         this.map.moveLayer("county_sandiego_city_sandiego", "building-extrusion");
+        this.map.moveLayer("parceline", "building-extrusion");
 
         this.map.on("mousemove", "county_sandiego_city_sandiego", (e) => {
           let content = this.map.queryRenderedFeatures(e.point, {
