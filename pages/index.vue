@@ -67,6 +67,7 @@ export default {
       polygon: null,
       geojsonArrays: [],
       hoveredStateId: null,
+      polygoncenter: null
     };
   },
   mounted() {
@@ -91,7 +92,7 @@ export default {
         zoom: 16,
         center: this.coordinates,
       });
-      
+
       this.map.on("click", "building", async (event) => {
         let params = {
           lat: event.lngLat.lat,
@@ -105,15 +106,15 @@ export default {
         this.buildingZoom(this.geojsonArrays);
       });
 
-      this.map.on("mouseenter", 'test', (e) => {
+      this.map.on("mouseenter", "test", (e) => {
         let content = this.map.queryRenderedFeatures(e.point, {
-          layers: ['test']
-        })
+          layers: ["test"],
+        });
         console.log(content);
-      })
-      this.map.on("load", () => {
-        // this.map.removeLayer("building");
+      });
 
+      this.map.on("load", () => {
+        this.map.removeLayer("building");
 
         this.map.on("mousemove", "building", (e) => {
           if (e.features.length > 0) {
@@ -138,6 +139,7 @@ export default {
             );
           }
         });
+
         this.map.on("mouseleave", "building", () => {
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
@@ -152,30 +154,30 @@ export default {
           this.hoveredStateId = null;
         });
 
+        this.map.addSource("mapbox-streets", {
+          type: "vector",
+          url: "mapbox://mapbox.mapbox-streets-v8",
+          generateId: true,
+        });
+        this.polygon = this.map.addLayer({
+          id: "building",
+          generateId: true,
+          source: "mapbox-streets",
+          "source-layer": "building",
+          type: "fill",
+          paint: {
+            "fill-color": "rgba(66,100,251, 0.3)",
+            "fill-outline-color": "rgba(66,100,251, 1)",
+            "fill-opacity": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false],
+              1,
+              0.5,
+            ],
+          },
+        });
 
 
-        // this.map.addSource("mapbox-streets", {
-        //   type: "vector",
-        //   url: "mapbox://mapbox.mapbox-streets-v8",
-        //   generateId: true,
-        // });
-        // this.polygon = this.map.addLayer({
-        //   id: "building",
-        //   generateId: true,
-        //   source: "mapbox-streets",
-        //   "source-layer": "building",
-        //   type: "fill",
-        //   paint: {
-        //     "fill-color": "rgba(66,100,251, 0.3)",
-        //     "fill-outline-color": "rgba(66,100,251, 1)",
-        //     "fill-opacity": [
-        //       "case",
-        //       ["boolean", ["feature-state", "hover"], false],
-        //       1,
-        //       0.5,
-        //     ],
-        //   },
-        // });
         this.map.on("mousemove", "building", (e) => {
           if (e.features.length > 0) {
             if (this.hoveredStateId !== null) {
@@ -218,11 +220,14 @@ export default {
         });
         this.map.on("mouseenter", "building", async (e) => {
           this.map.getCanvas().style.cursor = "pointer";
-          const coordinates = e.lngLat;
-          let params = {
-            lat: coordinates.lat,
-            lng: coordinates.lng,
-          };
+          // const coordinates = e.lngLat;
+          // let params = {
+          //   lat: coordinates.lat,
+          //   lng: coordinates.lng,
+          // };
+          
+          console.log(coordinates);
+          this.getPolygonCenter()
           await this.$store.dispatch("locationhover/get", params);
           let description = this.hoverlocation.features[0].place_name;
           popup.setLngLat(coordinates).setHTML(description).addTo(this.map);
@@ -232,93 +237,95 @@ export default {
           popup.remove();
         });
       });
-      this.initHoverBuilding(this.map);
+      // this.initHoverBuilding(this.map);
     },
-    initHoverBuilding(map) {
-      map.on("style.load", function () {
-        const layers = map.getStyle().layers;
-        const labelLayerId = layers.find(
-          (layer) => layer.type === "symbol" && layer.layout["text-field"]
-        ).id;
-        if (map.getSource("composite")) {
-          map.addLayer(
-            {
-              id: "3d-buildings",
-              source: "composite",
-              "source-layer": "building",
-              filter: ["==", "extrude", "true"],
-              type: "fill-extrusion",
-              minzoom: 15,
-              paint: {
-                "fill-extrusion-color": [
-                  "case",
-                  ["boolean", ["feature-state", "hover"], false],
-                  "#aaa",
-                  "#aaa",
-                ],
-                "fill-extrusion-height": [
-                  "case",
-                  ["boolean", ["feature-state", "hover"], false],
-                  ["get", "height"],
-                  0,
-                ],
-                "fill-extrusion-base": [
-                  "case",
-                  ["boolean", ["feature-state", "hover"], false],
-                  ["get", "base_height"],
-                  0,
-                ],
-              },
-            },
-            labelLayerId
-          );
-        }
-        let fHover;
-        map.on("mousemove", function (e) {
-          //157001066
-          var features = map.queryRenderedFeatures(e.point, {
-            layers: ["3d-buildings"],
-          });
-          if (features[0]) {
-            mouseout();
-            mouseover(features[0]);
-          } else {
-            mouseout();
-          }
-        });
-        map.on("mouseout", function (e) {
-          mouseout();
-        });
-        function mouseout() {
-          if (!fHover) return;
-          map.getCanvasContainer().style.cursor = "default";
-          map.setFeatureState(
-            {
-              source: fHover.source,
-              sourceLayer: fHover.sourceLayer,
-              id: fHover.id,
-            },
-            {
-              hover: false,
-            }
-          );
-        }
-        function mouseover(feature) {
-          fHover = feature;
-          map.getCanvasContainer().style.cursor = "pointer";
-          map.setFeatureState(
-            {
-              source: fHover.source,
-              sourceLayer: fHover.sourceLayer,
-              id: fHover.id,
-            },
-            {
-              hover: true,
-            }
-          );
-        }
-      });
-    },
+
+    // initHoverBuilding(map) {
+    //   map.on("style.load", function () {
+    //     const layers = map.getStyle().layers;
+    //     const labelLayerId = layers.find(
+    //       (layer) => layer.type === "symbol" && layer.layout["text-field"]
+    //     ).id;
+    //     if (map.getSource("composite")) {
+    //       map.addLayer(
+    //         {
+    //           id: "3d-buildings",
+    //           source: "composite",
+    //           "source-layer": "building",
+    //           filter: ["==", "extrude", "true"],
+    //           type: "fill-extrusion",
+    //           minzoom: 15,
+    //           paint: {
+    //             "fill-extrusion-color": [
+    //               "case",
+    //               ["boolean", ["feature-state", "hover"], false],
+    //               "#aaa",
+    //               "#aaa",
+    //             ],
+    //             "fill-extrusion-height": [
+    //               "case",
+    //               ["boolean", ["feature-state", "hover"], false],
+    //               ["get", "height"],
+    //               0,
+    //             ],
+    //             "fill-extrusion-base": [
+    //               "case",
+    //               ["boolean", ["feature-state", "hover"], false],
+    //               ["get", "base_height"],
+    //               0,
+    //             ],
+    //           },
+    //         },
+    //         labelLayerId
+    //       );
+    //     }
+    //     let fHover;
+    //     map.on("mousemove", function (e) {
+    //       //157001066
+    //       var features = map.queryRenderedFeatures(e.point, {
+    //         layers: ["3d-buildings"],
+    //       });
+    //       if (features[0]) {
+    //         mouseout();
+    //         mouseover(features[0]);
+    //       } else {
+    //         mouseout();
+    //       }
+    //     });
+    //     map.on("mouseout", function (e) {
+    //       mouseout();
+    //     });
+    //     function mouseout() {
+    //       if (!fHover) return;
+    //       map.getCanvasContainer().style.cursor = "default";
+    //       map.setFeatureState(
+    //         {
+    //           source: fHover.source,
+    //           sourceLayer: fHover.sourceLayer,
+    //           id: fHover.id,
+    //         },
+    //         {
+    //           hover: false,
+    //         }
+    //       );
+    //     }
+    //     function mouseover(feature) {
+    //       fHover = feature;
+    //       map.getCanvasContainer().style.cursor = "pointer";
+    //       map.setFeatureState(
+    //         {
+    //           source: fHover.source,
+    //           sourceLayer: fHover.sourceLayer,
+    //           id: fHover.id,
+    //         },
+    //         {
+    //           hover: true,
+    //         }
+    //       );
+    //     }
+    //   });
+    // },
+
     setNewMarker() {
       this.marker = new this.$mapboxgl.Marker({
         color: "red",
@@ -328,11 +335,31 @@ export default {
         .addTo(this.map);
       this.marker.on("dragend", this.onDragEnd);
     },
+
     buildingZoom(coordinates) {
-      this.map.fitBounds(coordinates, {
-        zoom: 19,
+
+      
+      this.marker.setLngLat(this.polygoncenter);
+      this.map.fitBounds(bounds, {
       });
+
+      // this.map.fitBounds(coordinates, {
+      //   zoom: 19,
+      // });
     },
+
+    getPolygonCenter(){
+      console.log(this.coordinates);
+      const bounds = new this.$mapboxgl.LngLatBounds(this.coordinates[0], this.coordinates[0]);
+
+      // Extend the 'LngLatBounds' to include every coordinate in the bounds result.
+      for (const coord of this.coordinates) {
+        bounds.extend(coord);
+      }
+      let center = bounds
+      this.polygoncenter = center.getCenter();
+    },
+
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
