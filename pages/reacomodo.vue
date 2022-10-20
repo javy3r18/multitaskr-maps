@@ -83,15 +83,15 @@ export default {
 
         this.map.addSource("parceltest2", {
           type: "vector",
-          url: "mapbox://martoast.county_sandiego_city_sandiego",
+          url: "mapbox://martoast.citysandiego",
           generateId: true,
         });
 
         this.map.addLayer({
-          id: "county_sandiego_city_sandiego",
+          id: "citysandiego",
           generateId: true,
           source: "parceltest2",
-          "source-layer": "county_sandiego_city_sandiego",
+          "source-layer": "citysandiego",
           type: "fill",
           paint: {
             "fill-color": "#B591F9",
@@ -107,7 +107,7 @@ export default {
 
         this.map.addLayer({
           id: "parceline",
-          "source-layer": "county_sandiego_city_sandiego",
+          "source-layer": "citysandiego",
           type: "line",
           source: "parceltest2",
           layout: {},
@@ -118,15 +118,16 @@ export default {
           },
         });
 
-        this.map.moveLayer("county_sandiego_city_sandiego", "building-extrusion");
+        this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parceline", "building-extrusion");
 
-        this.map.on("mousemove", "county_sandiego_city_sandiego", (e) => {
+        this.map.on("mousemove", "citysandiego", (e) => {
           let content = this.map.queryRenderedFeatures(e.point, {
-            layers: ["county_sandiego_city_sandiego"],
+            layers: ["citysandiego"],
           });
           let id = content[0].id;
           if (this.mouseHover != id) {
+            // console.log(content[0].properties.parcel_id);
             this.mouseHover = content[0].id;
             //this.showPopup(e.lngLat);
             this.params = e.lngLat;
@@ -135,7 +136,7 @@ export default {
                 this.map.setFeatureState(
                   {
                     source: "parceltest2",
-                    sourceLayer: "county_sandiego_city_sandiego",
+                    sourceLayer: "citysandiego",
                     id: this.hoveredStateId,
                   },
                   { hover: false }
@@ -145,7 +146,7 @@ export default {
               this.map.setFeatureState(
                 {
                   source: "parceltest2",
-                  sourceLayer: "county_sandiego_city_sandiego",
+                  sourceLayer: "citysandiego",
                   id: this.hoveredStateId,
                 },
                 { hover: true }
@@ -154,14 +155,14 @@ export default {
           }
         });
 
-        this.map.on("mouseleave", "county_sandiego_city_sandiego", () => {
+        this.map.on("mouseleave", "citysandiego", () => {
           this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
           this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
               {
                 source: "parceltest2",
-                sourceLayer: "county_sandiego_city_sandiego",
+                sourceLayer: "citysandiego",
                 id: this.hoveredStateId,
               },
               { hover: false }
