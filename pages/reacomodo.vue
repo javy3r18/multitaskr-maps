@@ -37,8 +37,8 @@ export default {
         address: null,
       },
       coordinates: {
-        lng: -117.04342,
-        lat: 32.55252,
+        lng: this.$route.query.lng,
+        lat: this.$route.query.lat,
       },
       params:null,
       polygon: null,
