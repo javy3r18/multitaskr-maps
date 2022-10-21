@@ -182,6 +182,7 @@ export default {
   mounted() {
     this.createMap();
     this.setAutoFill();
+    this.getSelectedAddress();  
   },
 
   methods: {
@@ -197,7 +198,8 @@ export default {
       });
 
       this.map.on("load", () => {
-        this.getSelectedAddress();
+        
+        this.onClickParcel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
@@ -279,8 +281,8 @@ export default {
           }
         });
         this.map.on("click", "citysandiego", (e) => {
-          this.onClickParcel();
           this.coordinates = e.lngLat;
+          this.onClickParcel();
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
@@ -320,11 +322,16 @@ export default {
     },
 
     async getSelectedAddress() {
+      if (this.map.getSource("mainaddress")) {
+        this.map.removeLayer("polygon");
+        this.map.removeSource("mainaddress");
+      }
+
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
       };
-
+      
       await this.$store.dispatch("polygons/get", params);
       let geojson = JSON.parse(this.polygons.geojson);
 
@@ -352,7 +359,7 @@ export default {
         source: "mainaddress",
         type: "fill",
         paint: {
-          "fill-color": "#3D8F00",
+          "fill-color": "#4D04AE",
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
@@ -369,6 +376,7 @@ export default {
 
       this.map.fitBounds(bounds, {
         padding: 20,
+        zoom: 20
       });
     },
 
@@ -376,7 +384,7 @@ export default {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        this.locationCenter();
+        this.getSelectedAddress();
       });
     },
 
@@ -389,13 +397,13 @@ export default {
       this.inputs.address = this.items.features[0].place_name;
     },
     async onClickParcel() {
+      this.getSelectedAddress()
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
         access_token: this.access_token,
       };
       await this.$store.dispatch("locations/get", params);
-      console.log(this.items);
       this.inputs.address = this.items.features[0].place_name;
       this.inputs.id = this.items.features[0].id;
       this.inputs.zip = this.items.features[0].context[1].text;
