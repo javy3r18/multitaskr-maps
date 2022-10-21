@@ -15,9 +15,11 @@ export default {
     ],
     link: [
       { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-      { rel:"stylesheet", href:"https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css"}
+      {
+        rel: "stylesheet",
+        href: "https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css",
+      },
     ],
-
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -34,7 +36,7 @@ export default {
     {
       src: "~/plugins/mapboxgeo.js",
     },
-  ],  
+  ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -46,7 +48,7 @@ export default {
   modules: [
     // https://go.nuxtjs.dev/bootstrap
     "bootstrap-vue/nuxt",
-    "@nuxtjs/axios"
+    "@nuxtjs/axios",
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
