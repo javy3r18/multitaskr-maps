@@ -101,7 +101,7 @@ export default {
 
     onSubmit() {
       this.$router.push({
-        path: "reacomodo",
+        path: "map",
         query: this.coordinates,
       });
     },
