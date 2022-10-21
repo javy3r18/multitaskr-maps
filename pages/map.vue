@@ -423,10 +423,10 @@ export default {
 
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
-      let geojson = JSON.parse(this.polygons.geojson);
-
-      let parseJson = geojson.coordinates[0];
-      this.geojsonArrays = [];
+      try{
+        let geojson = JSON.parse(this.polygons.geojson);
+        let parseJson = geojson.coordinates[0];
+        this.geojsonArrays = [];
       parseJson.forEach((item) => {
         let itemArray = [item[1], item[0]];
         this.geojsonArrays.push(itemArray);
@@ -444,6 +444,10 @@ export default {
         .setLngLat(center.getCenter())
         .setHTML("Example Address")
         .addTo(this.map);
+      }catch (error){
+        console.log(error);
+      }
+
     }, 500),
   },
 };
