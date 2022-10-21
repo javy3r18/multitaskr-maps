@@ -44,22 +44,28 @@
                 <b-row>
                   <b-col cols="6">
                     <p>
-                      LAND USE <br />
-                      <span>Residential</span>
-                    </p>
-                    <p>
                       CITY<br />
-                      <span>{{ inputs.city }}</span>
+                      <span id="underline">{{ inputs.city }}</span>
                     </p>
                     <p>
                       STATE<br />
-                      <span>{{ inputs.state }}</span>
+                      <span id="underline">{{ inputs.state }}</span>
                     </p>
                     <p>
+                      <b-icon
+                        id="infoicon"
+                        icon="info-circle"
+                        font-scale="0.8"
+                      ></b-icon>
                       LOT AREA<br />
                       <span>0.82</span>
                     </p>
                     <p>
+                      <b-icon
+                        id="infoicon"
+                        icon="info-circle"
+                        font-scale="0.8"
+                      ></b-icon>
                       YEAR BUILT<br />
                       <span>2000</span>
                     </p>
@@ -67,13 +73,19 @@
                   <b-col cols="6">
                     <p>
                       COUNTY<br />
-                      <span>{{ inputs.county }}</span>
+                      <span id="underline">{{ inputs.county }}</span>
                     </p>
                     <p>
                       ZIP CODE<br />
                       <span>{{ inputs.zip }}</span>
                     </p>
                     <p>
+                      <b-icon
+                        id="infoicon"
+                        icon="info-circle"
+                        font-scale="0.8"
+                      ></b-icon>
+
                       PROPERTY ID<br />
                       <span>{{ inputs.id | capitalize }}</span>
                     </p>
@@ -88,22 +100,22 @@
           <div class="collapsable-text">
             <b-container v-b-toggle.collapse-1>
               <span>Assesed Values</span>
-              <b-icon id="icon" icon="chevron-down"></b-icon>
+              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
             </b-container>
             <hr />
             <b-container v-b-toggle.collapse-1>
               <span>Property details</span>
-              <b-icon id="icon" icon="chevron-down"></b-icon>
+              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
             </b-container>
             <hr />
             <b-container v-b-toggle.collapse-1>
               <span>Environmental Hazards & Concerns</span>
-              <b-icon id="icon" icon="chevron-down"></b-icon>
+              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
             </b-container>
             <hr />
             <b-container v-b-toggle.collapse-1>
               <span>Zoning & General Plan</span>
-              <b-icon id="icon" icon="chevron-down"></b-icon>
+              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
             </b-container>
           </div>
           <hr />
@@ -383,6 +395,7 @@ export default {
         access_token: this.access_token,
       };
       await this.$store.dispatch("locations/get", params);
+      console.log(this.items);
       this.inputs.address = this.items.features[0].place_name;
       this.inputs.id = this.items.features[0].id;
       this.inputs.zip = this.items.features[0].context[1].text;
@@ -444,6 +457,11 @@ export default {
 .multitaskr {
   background-color: #4e0eaf;
 }
+.text-address {
+  font-weight: bold;
+  font-family:Arial, Helvetica, sans-serif ;
+  font-size: 16px;
+}
 .input-class {
   height: 30px;
   font-size: 14px;
@@ -460,20 +478,34 @@ export default {
   font-size: 15px;
   font-weight: bold;
 }
+.details {
+  color: #575758;
+  font-size: 15px;
+}
 .details span {
-  color: #4e0eaf;
+  color: #67676b;
 }
 .collapsable-text {
   font-weight: bold;
   font-family: Arial, Helvetica, sans-serif;
 }
-.text-address {
-  font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
+
+#underline {
+  color: #4e0eaf;
+  text-decoration: underline;
 }
-#icon {
+
+#toggleicon {
   display: inline-block;
   float: right;
+}
+#infoicon {
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+}
+#infoicon:hover {
+  color: #4e0eaf;
 }
 .mapboxgl-popup {
   max-width: 400px;
