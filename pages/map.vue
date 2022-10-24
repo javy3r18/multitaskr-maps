@@ -38,6 +38,7 @@
             <b-card-text class="text-address">{{ inputs.address }}</b-card-text>
           </div>
           <hr />
+
           <b-tabs content-class="mt-3">
             <b-tab title="Details" active>
               <div class="details">
@@ -93,7 +94,14 @@
                 </b-row>
               </div>
             </b-tab>
-            <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
+            <b-tab title="Projects">
+              <p>Second tab</p>
+              <div>
+                <i class="fa fa-user"></i>
+                <i class="fa fa-linkedin-square" aria-hidden="true"></i>
+                <i class="fa fa-map" aria-hidden="true"></i>
+              </div>
+            </b-tab>
             <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
           </b-tabs>
           <hr />
@@ -141,7 +149,6 @@ export default {
       access_token:
         "pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g",
       map: {},
-
       search: {},
       inputs: {
         address: null,
@@ -162,6 +169,9 @@ export default {
       hoveredStateId: null,
       mouseHover: null,
       popup: null,
+      myCustomControl: null,
+      geojson: [],
+      itemArray: [],
     };
   },
   filters: {
@@ -171,19 +181,17 @@ export default {
       return value.slice(8);
     },
   },
-
   computed: {
     ...mapGetters({
       items: "locations/items",
       polygons: "polygons/polygons",
     }),
   },
-
   mounted() {
     this.createMap();
     this.setAutoFill();
+    this.getSelectedAddress();
   },
-
   methods: {
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
@@ -195,21 +203,18 @@ export default {
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
       });
-
       this.map.on("load", () => {
-        this.getSelectedAddress();
-
+        this.addControls();
+        this.onClickParcel();
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
         });
-
         this.map.addSource("parceltest2", {
           type: "vector",
           url: "mapbox://martoast.citysandiego",
           generateId: true,
         });
-
         this.map.addLayer({
           id: "citysandiego",
           generateId: true,
@@ -227,7 +232,6 @@ export default {
             ],
           },
         });
-
         this.map.addLayer({
           id: "parceline",
           "source-layer": "citysandiego",
@@ -240,10 +244,8 @@ export default {
             "line-width": 2,
           },
         });
-
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parceline", "building-extrusion");
-
         this.map.on("mousemove", "citysandiego", (e) => {
           this.map.getCanvas().style.cursor = "pointer";
           let content = this.map.queryRenderedFeatures(e.point, {
@@ -279,10 +281,9 @@ export default {
           }
         });
         this.map.on("click", "citysandiego", (e) => {
-          this.onClickParcel();
           this.coordinates = e.lngLat;
+          this.onClickParcel();
         });
-
         this.map.on("mouseleave", "citysandiego", () => {
           this.map.getCanvas().style.cursor = "";
           this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
@@ -301,14 +302,12 @@ export default {
         });
       });
     },
-
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
         options: { country: "us" },
       });
     },
-
     locationCenter() {
       this.map.easeTo({
         center: this.coordinates,
@@ -318,23 +317,24 @@ export default {
         curve: 2,
       });
     },
-
     async getSelectedAddress() {
+      if (this.map.getSource("mainaddress")) {
+        this.map.removeLayer("polygon");
+        this.map.removeSource("mainaddress");
+      }
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
       };
 
       await this.$store.dispatch("polygons/get", params);
-      let geojson = JSON.parse(this.polygons.geojson);
-
-      let parseJson = geojson.coordinates[0];
+      this.geojson = JSON.parse(this.polygons.geojson);
+      let parseJson = this.geojson.coordinates[0];
       this.geojsonArrays = [];
       parseJson.forEach((item) => {
         let itemArray = [item[1], item[0]];
         this.geojsonArrays.push(itemArray);
       });
-
       this.map.addSource("mainaddress", {
         type: "geojson",
         data: {
@@ -345,41 +345,30 @@ export default {
           },
         },
       });
-
       this.map.addLayer({
         id: "polygon",
         generateId: true,
         source: "mainaddress",
         type: "fill",
         paint: {
-          "fill-color": "#3D8F00",
+          "fill-color": "#4D04AE",
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-
+      
       this.map.moveLayer("polygon", "building-extrusion");
-
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
-      );
-      for (const coord of this.geojsonArrays) {
-        bounds.extend(coord);
-      }
-
-      this.map.fitBounds(bounds, {
-        padding: 20,
-      });
+      let bbox = this.$extent(this.geojson);
+      let examplearr = [bbox[1], bbox[0], bbox[3], bbox[2]] 
+      this.map.fitBounds(examplearr);
+      console.log(bbox);
     },
-
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        this.locationCenter();
+        this.getSelectedAddress();
       });
     },
-
     async getAddress() {
       let params = {
         lat: this.coordinates.lat,
@@ -389,13 +378,14 @@ export default {
       this.inputs.address = this.items.features[0].place_name;
     },
     async onClickParcel() {
+      // this.onBounding();
+      this.getSelectedAddress();
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
         access_token: this.access_token,
       };
       await this.$store.dispatch("locations/get", params);
-      console.log(this.items);
       this.inputs.address = this.items.features[0].place_name;
       this.inputs.id = this.items.features[0].id;
       this.inputs.zip = this.items.features[0].context[1].text;
@@ -404,8 +394,57 @@ export default {
       this.inputs.city = this.items.features[0].context[2].text; //p
       this.inputs.state = this.items.features[0].context[4].text; //p
     },
-  },
+    //Custom controls (3 icons)
+    addControls() {
+      class MyCustomControl {
+        onAdd(map) {
+          this.map = map;
+          this.container = document.createElement("div");
+          this.container.className = "mapboxgl-ctrl";
+          this.container.innerHTML =
+            '<div id="event" class="centeredIcon">' +
+            '<div class="icon fa fa-map"></div>' +
+            "</div>" +
+            '<div class="centeredIcon">' +
+            '<div class="icon fa fa-lightbulb-o"></div>' +
+            "</div>" +
+            '<div class="centeredIcon">' +
+            '<div class="icon fa fa-cube"></div>' +
+            "</div>";
+          this.container.addEventListener("click", function (event) {
+            var elem = document.getElementById("event");
+         
+          });
 
+          return this.container;
+        }
+      }
+      this.myCustomControl = new MyCustomControl();
+      this.map.addControl(this.myCustomControl, "top-right");
+
+      //Styles Control
+      this.map.addControl(
+        new this.$StylesControl({
+          styles: [
+            {
+              label: "Streets",
+              styleName: "Mapbox Streets",
+              styleUrl: "mapbox://styles/mapbox/streets-v9",
+            },
+            {
+              label: "Satellite",
+              styleName: "Satellite",
+              styleUrl: "mapbox://styles/mapbox/satellite-v9",
+            },
+          ],
+          onChange: (style) => console.log(style),
+        }),
+        "top-right"
+      );
+      const nav = new this.$mapboxgl.NavigationControl();
+      this.map.addControl(nav, "top-right");
+    },
+  },
   watch: {
     coordinates: {
       deep: true,
@@ -413,37 +452,37 @@ export default {
         this.getAddress();
       },
     },
-
     search: {
       deep: true,
       handler(value, old) {
         this.onAddressChange();
       },
     },
-
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
-      let geojson = JSON.parse(this.polygons.geojson);
-
-      let parseJson = geojson.coordinates[0];
-      this.geojsonArrays = [];
-      parseJson.forEach((item) => {
-        let itemArray = [item[1], item[0]];
-        this.geojsonArrays.push(itemArray);
-      });
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
-      );
-      for (const coord of this.geojsonArrays) {
-        bounds.extend(coord);
+      try {
+        this.geojson = JSON.parse(this.polygons.geojson);
+        let parseJson = this.geojson.coordinates[0];
+        this.geojsonArrays = [];
+        parseJson.forEach((item) => {
+          let itemArray = [item[1], item[0]];
+          this.geojsonArrays.push(itemArray);
+        });
+        const bounds = new this.$mapboxgl.LngLatBounds(
+          this.geojsonArrays[0],
+          this.geojsonArrays[0]
+        );
+        for (const coord of this.geojsonArrays) {
+          bounds.extend(coord);
+        }
+        let center = bounds;
+        this.popup
+          .setLngLat(center.getCenter())
+          .setHTML("Example Address")
+          .addTo(this.map);
+      } catch (error) {
+        console.log(error);
       }
-      let center = bounds;
-
-      this.popup
-        .setLngLat(center.getCenter())
-        .setHTML("Example Address")
-        .addTo(this.map);
     }, 500),
   },
 };
@@ -459,7 +498,7 @@ export default {
 }
 .text-address {
   font-weight: bold;
-  font-family:Arial, Helvetica, sans-serif ;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
 }
 .input-class {
@@ -489,12 +528,10 @@ export default {
   font-weight: bold;
   font-family: Arial, Helvetica, sans-serif;
 }
-
 #underline {
   color: #4e0eaf;
   text-decoration: underline;
 }
-
 #toggleicon {
   display: inline-block;
   float: right;
@@ -510,5 +547,19 @@ export default {
 .mapboxgl-popup {
   max-width: 400px;
   font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+.centeredIcon {
+  cursor: pointer;
+  display: flex;
+  flex-direction: initial;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #d7dbdd;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
 }
 </style>
