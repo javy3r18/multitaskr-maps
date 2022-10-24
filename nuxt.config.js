@@ -37,6 +37,9 @@ export default {
     {
       src: "~/plugins/mapboxgeo.js",
     },
+    {
+      src: "~/plugins/turf-extent.js",
+    },
   ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components

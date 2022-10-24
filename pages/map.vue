@@ -182,7 +182,7 @@ export default {
   mounted() {
     this.createMap();
     this.setAutoFill();
-    this.getSelectedAddress();  
+    this.getSelectedAddress();
   },
 
   methods: {
@@ -198,7 +198,6 @@ export default {
       });
 
       this.map.on("load", () => {
-        
         this.onClickParcel();
 
         this.popup = new this.$mapboxgl.Popup({
@@ -331,7 +330,7 @@ export default {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
       };
-      
+
       await this.$store.dispatch("polygons/get", params);
       let geojson = JSON.parse(this.polygons.geojson);
 
@@ -374,10 +373,9 @@ export default {
         bounds.extend(coord);
       }
 
-      this.map.fitBounds(bounds, {
-        padding: 20,
-        zoom: 20
-      });
+      let bbox = this.$extent(this.geojson);
+      let examplearr = [bbox[1], bbox[0], bbox[3], bbox[2]];
+      this.map.fitBounds(examplearr);
     },
 
     onAddressChange() {
@@ -397,7 +395,7 @@ export default {
       this.inputs.address = this.items.features[0].place_name;
     },
     async onClickParcel() {
-      this.getSelectedAddress()
+      this.getSelectedAddress();
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
@@ -431,31 +429,30 @@ export default {
 
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
-      try{
+      try {
         let geojson = JSON.parse(this.polygons.geojson);
         let parseJson = geojson.coordinates[0];
         this.geojsonArrays = [];
-      parseJson.forEach((item) => {
-        let itemArray = [item[1], item[0]];
-        this.geojsonArrays.push(itemArray);
-      });
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
-      );
-      for (const coord of this.geojsonArrays) {
-        bounds.extend(coord);
-      }
-      let center = bounds;
+        parseJson.forEach((item) => {
+          let itemArray = [item[1], item[0]];
+          this.geojsonArrays.push(itemArray);
+        });
+        const bounds = new this.$mapboxgl.LngLatBounds(
+          this.geojsonArrays[0],
+          this.geojsonArrays[0]
+        );
+        for (const coord of this.geojsonArrays) {
+          bounds.extend(coord);
+        }
+        let center = bounds;
 
-      this.popup
-        .setLngLat(center.getCenter())
-        .setHTML("Example Address")
-        .addTo(this.map);
-      }catch (error){
+        this.popup
+          .setLngLat(center.getCenter())
+          .setHTML("Example Address")
+          .addTo(this.map);
+      } catch (error) {
         console.log(error);
       }
-
     }, 500),
   },
 };
@@ -471,7 +468,7 @@ export default {
 }
 .text-address {
   font-weight: bold;
-  font-family:Arial, Helvetica, sans-serif ;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
 }
 .input-class {
