@@ -159,6 +159,7 @@ export default {
       },
       params: null,
       geojsonArrays: [],
+      geojson: [],
       hoveredStateId: null,
       mouseHover: null,
       popup: null,
@@ -332,9 +333,9 @@ export default {
       };
 
       await this.$store.dispatch("polygons/get", params);
-      let geojson = JSON.parse(this.polygons.geojson);
+      this.geojson = JSON.parse(this.polygons.geojson);
 
-      let parseJson = geojson.coordinates[0];
+      let parseJson = this.geojson.coordinates[0];
       this.geojsonArrays = [];
       parseJson.forEach((item) => {
         let itemArray = [item[1], item[0]];
@@ -364,18 +365,10 @@ export default {
       });
 
       this.map.moveLayer("polygon", "building-extrusion");
-
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
-      );
-      for (const coord of this.geojsonArrays) {
-        bounds.extend(coord);
-      }
-
       let bbox = this.$extent(this.geojson);
-      let examplearr = [bbox[1], bbox[0], bbox[3], bbox[2]];
-      this.map.fitBounds(examplearr);
+      let arr = [bbox[1], bbox[0], bbox[3], bbox[2]];
+      this.map.fitBounds(arr, { zoom: 18 });
+      // Try this address: 5761 Airway Rd
     },
 
     onAddressChange() {
@@ -430,8 +423,8 @@ export default {
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
       try {
-        let geojson = JSON.parse(this.polygons.geojson);
-        let parseJson = geojson.coordinates[0];
+        this.geojson = JSON.parse(this.polygons.geojson);
+        let parseJson = this.geojson.coordinates[0];
         this.geojsonArrays = [];
         parseJson.forEach((item) => {
           let itemArray = [item[1], item[0]];
