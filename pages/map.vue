@@ -460,29 +460,27 @@ export default {
     },
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
-      try {
-        this.geojson = JSON.parse(this.polygons.geojson);
-        let parseJson = this.geojson.coordinates[0];
-        this.geojsonArrays = [];
-        parseJson.forEach((item) => {
-          let itemArray = [item[1], item[0]];
-          this.geojsonArrays.push(itemArray);
-        });
-        const bounds = new this.$mapboxgl.LngLatBounds(
-          this.geojsonArrays[0],
-          this.geojsonArrays[0]
-        );
-        for (const coord of this.geojsonArrays) {
-          bounds.extend(coord);
-        }
-        let center = bounds;
-        this.popup
-          .setLngLat(center.getCenter())
-          .setHTML("Example Address")
-          .addTo(this.map);
-      } catch (error) {
-        console.log(error);
+      let geojson = JSON.parse(this.polygons.geojson);
+
+      let parseJson = geojson.coordinates[0];
+      this.geojsonArrays = [];
+      parseJson.forEach((item) => {
+        let itemArray = [item[1], item[0]];
+        this.geojsonArrays.push(itemArray);
+      });
+      const bounds = new this.$mapboxgl.LngLatBounds(
+        this.geojsonArrays[0],
+        this.geojsonArrays[0]
+      );
+      for (const coord of this.geojsonArrays) {
+        bounds.extend(coord);
       }
+      let center = bounds;
+
+      this.popup
+        .setLngLat(center.getCenter())
+        .setHTML("Example Address")
+        .addTo(this.map);
     }, 500),
   },
 };
