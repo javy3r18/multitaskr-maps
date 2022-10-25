@@ -367,8 +367,8 @@ export default {
       this.map.moveLayer("polygon", "building-extrusion");
       let bbox = this.$extent(this.geojson);
       let arr = [bbox[1], bbox[0], bbox[3], bbox[2]];
-      this.map.fitBounds(arr, { zoom: 18 });
-      // Try this address: 5761 Airway Rd
+      this.map.fitBounds(arr, { zoom: 16 }, {padding: { top: 10, bottom: 25, left: 15, right: 5 }});
+      // Try this address: 5761 Airway Rd}
     },
 
     onAddressChange() {
