@@ -129,6 +129,7 @@
 </template>
 
 <script>
+import { Threebox } from 'threebox-plugin'; 
 import Vue from "vue";
 import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
 Vue.use(BootstrapVue);
@@ -200,6 +201,31 @@ export default {
       this.map.on("load", () => {
         
         this.onClickParcel();
+
+        this.map.addLayer({
+          id: "custom_layer",
+          type: "custom",
+          renderingMode: "3d",
+          onAdd: function (map, mbxContext) {
+            window.tb = new Threebox(map, mbxContext, { defaultLights: true });
+
+            var options = {
+              obj: 'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
+              type: "gltf",
+              scale: 1,
+              units: "meters",
+              rotation: { x: 90, y: 0, z: 0 }, //default rotation
+            };
+
+            tb.loadObj(options, function (model) {
+              let soldier = model.setCoords([-117.157268, 32.713888]);
+              tb.add(soldier);
+            });
+          },
+          render: function (gl, matrix) {
+            tb.update();
+          },
+        });
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
