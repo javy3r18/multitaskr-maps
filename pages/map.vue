@@ -129,7 +129,6 @@
 </template>
 
 <script>
-import { Threebox } from 'threebox-plugin'; 
 import Vue from "vue";
 import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
 Vue.use(BootstrapVue);
@@ -142,7 +141,6 @@ export default {
       access_token:
         "pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g",
       map: {},
-
       search: {},
       inputs: {
         address: null,
@@ -172,20 +170,17 @@ export default {
       return value.slice(8);
     },
   },
-
   computed: {
     ...mapGetters({
       items: "locations/items",
       polygons: "polygons/polygons",
     }),
   },
-
   mounted() {
     this.createMap();
     this.setAutoFill();
     this.getSelectedAddress();  
   },
-
   methods: {
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
@@ -197,47 +192,18 @@ export default {
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
       });
-
       this.map.on("load", () => {
         
         this.onClickParcel();
-
-        this.map.addLayer({
-          id: "custom_layer",
-          type: "custom",
-          renderingMode: "3d",
-          onAdd: function (map, mbxContext) {
-            window.tb = new Threebox(map, mbxContext, { defaultLights: true });
-
-            var options = {
-              obj: 'https://docs.mapbox.com/mapbox-gl-js/assets/34M_17/34M_17.gltf',
-              type: "gltf",
-              scale: 1,
-              units: "meters",
-              rotation: { x: 90, y: 0, z: 0 }, //default rotation
-            };
-
-            tb.loadObj(options, function (model) {
-              let soldier = model.setCoords([-117.157268, 32.713888]);
-              tb.add(soldier);
-            });
-          },
-          render: function (gl, matrix) {
-            tb.update();
-          },
-        });
-
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
         });
-
         this.map.addSource("parceltest2", {
           type: "vector",
           url: "mapbox://martoast.citysandiego",
           generateId: true,
         });
-
         this.map.addLayer({
           id: "citysandiego",
           generateId: true,
@@ -255,7 +221,6 @@ export default {
             ],
           },
         });
-
         this.map.addLayer({
           id: "parceline",
           "source-layer": "citysandiego",
@@ -268,10 +233,8 @@ export default {
             "line-width": 2,
           },
         });
-
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parceline", "building-extrusion");
-
         this.map.on("mousemove", "citysandiego", (e) => {
           this.map.getCanvas().style.cursor = "pointer";
           let content = this.map.queryRenderedFeatures(e.point, {
@@ -310,7 +273,6 @@ export default {
           this.coordinates = e.lngLat;
           this.onClickParcel();
         });
-
         this.map.on("mouseleave", "citysandiego", () => {
           this.map.getCanvas().style.cursor = "";
           this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
@@ -329,14 +291,12 @@ export default {
         });
       });
     },
-
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
         options: { country: "us" },
       });
     },
-
     locationCenter() {
       this.map.easeTo({
         center: this.coordinates,
@@ -346,13 +306,11 @@ export default {
         curve: 2,
       });
     },
-
     async getSelectedAddress() {
       if (this.map.getSource("mainaddress")) {
         this.map.removeLayer("polygon");
         this.map.removeSource("mainaddress");
       }
-
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
@@ -360,14 +318,12 @@ export default {
       
       await this.$store.dispatch("polygons/get", params);
       let geojson = JSON.parse(this.polygons.geojson);
-
       let parseJson = geojson.coordinates[0];
       this.geojsonArrays = [];
       parseJson.forEach((item) => {
         let itemArray = [item[1], item[0]];
         this.geojsonArrays.push(itemArray);
       });
-
       this.map.addSource("mainaddress", {
         type: "geojson",
         data: {
@@ -378,7 +334,6 @@ export default {
           },
         },
       });
-
       this.map.addLayer({
         id: "polygon",
         generateId: true,
@@ -389,9 +344,7 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-
       this.map.moveLayer("polygon", "building-extrusion");
-
       const bounds = new this.$mapboxgl.LngLatBounds(
         this.geojsonArrays[0],
         this.geojsonArrays[0]
@@ -399,13 +352,11 @@ export default {
       for (const coord of this.geojsonArrays) {
         bounds.extend(coord);
       }
-
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 20
       });
     },
-
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
@@ -413,7 +364,6 @@ export default {
         this.getSelectedAddress();
       });
     },
-
     async getAddress() {
       let params = {
         lat: this.coordinates.lat,
@@ -439,7 +389,6 @@ export default {
       this.inputs.state = this.items.features[0].context[4].text; //p
     },
   },
-
   watch: {
     coordinates: {
       deep: true,
@@ -447,14 +396,12 @@ export default {
         this.getAddress();
       },
     },
-
     search: {
       deep: true,
       handler(value, old) {
         this.onAddressChange();
       },
     },
-
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
       try{
@@ -473,7 +420,6 @@ export default {
         bounds.extend(coord);
       }
       let center = bounds;
-
       this.popup
         .setLngLat(center.getCenter())
         .setHTML("Example Address")
@@ -481,7 +427,6 @@ export default {
       }catch (error){
         console.log(error);
       }
-
     }, 500),
   },
 };
@@ -527,12 +472,10 @@ export default {
   font-weight: bold;
   font-family: Arial, Helvetica, sans-serif;
 }
-
 #underline {
   color: #4e0eaf;
   text-decoration: underline;
 }
-
 #toggleicon {
   display: inline-block;
   float: right;
