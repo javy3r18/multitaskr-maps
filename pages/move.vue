@@ -19,7 +19,6 @@
                   name="address"
                   placeholder="Enter a California location"
                   autocomplete="shipping address-line1"
-                  v-model="inputs.address"
                 ></b-form-input>
               </b-nav-form>
             </b-navbar-nav>
@@ -35,7 +34,7 @@
         <div class="m-3">
           <hr />
           <div>
-            <b-card-text class="text-address">{{ inputs.address }}</b-card-text>
+            <b-card-text class="text-address">{{}}</b-card-text>
           </div>
           <hr />
           <b-tabs content-class="mt-3">
@@ -45,11 +44,11 @@
                   <b-col cols="6">
                     <p>
                       CITY<br />
-                      <span id="underline">{{ inputs.city }}</span>
+                      <span id="underline">{{}}</span>
                     </p>
                     <p>
                       STATE<br />
-                      <span id="underline">{{ inputs.state }}</span>
+                      <span id="underline">{{}}</span>
                     </p>
                     <p>
                       <b-icon
@@ -73,11 +72,11 @@
                   <b-col cols="6">
                     <p>
                       COUNTY<br />
-                      <span id="underline">{{ inputs.county }}</span>
+                      <span id="underline">{{}}</span>
                     </p>
                     <p>
                       ZIP CODE<br />
-                      <span>{{ inputs.zip }}</span>
+                      <span>{{}}</span>
                     </p>
                     <p>
                       <b-icon
@@ -87,7 +86,7 @@
                       ></b-icon>
 
                       PROPERTY ID<br />
-                      <span>{{ inputs.id | capitalize }}</span>
+                      <span>{{}}</span>
                     </p>
                   </b-col>
                 </b-row>
@@ -129,7 +128,7 @@
 </template>
 
 <script>
-import { Threebox } from 'threebox-plugin'; 
+import { Threebox } from "threebox-plugin";
 import Vue from "vue";
 import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
 Vue.use(BootstrapVue);
@@ -156,14 +155,8 @@ export default {
       hoveredStateId: null,
       mouseHover: null,
       popup: null,
+      marker: null,
     };
-  },
-  filters: {
-    capitalize: function (value) {
-      if (!value) return "";
-      value = value.toString();
-      return value.slice(8);
-    },
   },
 
   computed: {
@@ -176,7 +169,7 @@ export default {
   mounted() {
     this.createMap();
     this.setAutoFill();
-    this.getSelectedAddress();  
+    this.getSelectedAddress();
   },
 
   methods: {
@@ -201,7 +194,6 @@ export default {
           closeButton: false,
           closeOnClick: false,
         });
-        this.map.moveLayer("sdcountyjurisdictions", "citysandiego");
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parceline", "building-extrusion");
 
@@ -239,6 +231,7 @@ export default {
         });
         this.map.on("click", "citysandiego", (e) => {
           this.coordinates = e.lngLat;
+          this.getSelectedAddress();
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
@@ -286,7 +279,7 @@ export default {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
       };
-      
+
       await this.$store.dispatch("polygons/get", params);
       let geojson = JSON.parse(this.polygons.geojson);
 
@@ -331,7 +324,7 @@ export default {
 
       this.map.fitBounds(bounds, {
         padding: 20,
-        zoom: 20
+        zoom: 20,
       });
     },
 
@@ -343,114 +336,131 @@ export default {
       });
     },
 
-    initParcelTileset(){
-      this.map.addSource("parceltest2", {
-          type: "vector",
-          url: "mapbox://multitaskr.citysandiego",
-          generateId: true,
-        });
-
-        this.map.addLayer({
-          id: "citysandiego",
-          generateId: true,
-          source: "parceltest2",
-          "source-layer": "citysandiego",
-          type: "fill",
-          paint: {
-            "fill-color": "#B591F9",
-            "fill-outline-color": "rgba(66,100,251, 1)",
-            "fill-opacity": [
-              "case",
-              ["boolean", ["feature-state", "hover"], false],
-              1,
-              0.5,
-            ],
-          },
-        });
-
-        this.map.addLayer({
-          id: "parceline",
-          "source-layer": "citysandiego",
-          type: "line",
-          source: "parceltest2",
-          layout: {},
-          paint: {
-            "line-dasharray": [4, 4],
-            "line-color": "#4D04AE",
-            "line-width": 2,
-          },
-        });
-    },
-
-    add3DModel(){
-      let coord = this.coordinates
-      this.map.addLayer({
-          id: "custom_layer",
-          type: "custom",
-          renderingMode: "3d",
-          onAdd: function (map, mbxContext) {
-            window.tb = new Threebox(map, mbxContext, { defaultLights: true });
-            var options = {
-              obj: './model/example.fbx',
-              type: "fbx",
-              scale: .05,
-              units: "meters",
-              rotation: { x: 90, y: 0, z: 0 }, //default rotation
-            };
-            tb.loadObj(options, function (model) {
-              let adu = model.setCoords([coord.lng, coord.lat]);
-              tb.add(adu);
-            });
-          },
-          render: function (gl, matrix) {
-            tb.update();
-          },
-        });
-    },
-
-    initZoneTileset(){
+    initZoneTileset() {
       this.map.addSource("zonetileset", {
-          type: "vector",
-          url: "mapbox://multitaskr.sdcountyjurisdictions",
-          generateId: true,
-        });
+        type: "vector",
+        url: "mapbox://multitaskr.sdcountyjurisdictions",
+        generateId: true,
+      });
 
-        this.map.addLayer({
-          id: "sdcountyjurisdictions",
-          generateId: true,
-          source: "zonetileset",
-          "source-layer": "sdcountyjurisdictions",
-          type: "fill",
-          paint: {
-            "fill-color": "#B591F9",
-            "fill-outline-color": "rgba(66,100,251, 1)",
-            "fill-opacity": [
-              "case",
-              ["boolean", ["feature-state", "hover"], false],
-              1,
-              0.5,
-            ],
-          },
-        });
+      this.map.addLayer({
+        id: "sdcountyjurisdictions",
+        generateId: true,
+        source: "zonetileset",
+        "source-layer": "sdcountyjurisdictions",
+        type: "fill",
+        minzoom: 9,
+        maxzoom: 12.5,
+        paint: {
+          "fill-color": "#B591F9",
+          "fill-outline-color": "rgba(66,100,251, 1)",
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            1,
+            0.5,
+          ],
+        },
+      });
 
-        this.map.addLayer({
-          id: "zoneline",
-          "source-layer": "sdcountyjurisdictions",
-          type: "line",
-          source: "zonetileset",
-          layout: {},
-          paint: {
-            "line-dasharray": [4, 4],
-            "line-color": "#4D04AE",
-            "line-width": 2,
-          },
-        });
+      this.map.addLayer({
+        id: "zoneline",
+        "source-layer": "sdcountyjurisdictions",
+        type: "line",
+        source: "zonetileset",
+        layout: {},
+        minzoom: 9,
+        maxzoom: 12.5,
+        paint: {
+          "line-dasharray": [4, 4],
+          "line-color": "#4D04AE",
+          "line-width": 2,
+        },
+      });
     },
 
-    initWheel(){
+    initParcelTileset() {
+      this.map.addSource("parceltest2", {
+        type: "vector",
+        url: "mapbox://multitaskr.citysandiego",
+        generateId: true,
+      });
+
+      this.map.addLayer({
+        id: "citysandiego",
+        generateId: true,
+        source: "parceltest2",
+        "source-layer": "citysandiego",
+        type: "fill",
+        paint: {
+          "fill-color": "#B591F9",
+          "fill-outline-color": "rgba(66,100,251, 1)",
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            1,
+            0.5,
+          ],
+        },
+      });
+
+      this.map.addLayer({
+        id: "parceline",
+        "source-layer": "citysandiego",
+        type: "line",
+        source: "parceltest2",
+        layout: {},
+        paint: {
+          "line-dasharray": [4, 4],
+          "line-color": "#4D04AE",
+          "line-width": 2,
+        },
+      });
+    },
+
+    add3DModel() {
+      let coord = this.coordinates;
+      this.map.addLayer({
+        id: "custom_layer",
+        type: "custom",
+        renderingMode: "3d",
+        onAdd: function (map, mbxContext) {
+          window.tb = new Threebox(map, mbxContext, { defaultLights: true });
+          var options = {
+            obj: "./model/example.fbx",
+            type: "fbx",
+            scale: 0.05,
+            units: "meters",
+            rotation: { x: 90, y: 0, z: 0 }, //default rotation
+          };
+          tb.loadObj(options, function (model) {
+            let adu = model.setCoords([coord.lng, coord.lat]);
+            tb.add(adu);
+          });
+        },
+        render: function (gl, matrix) {
+          tb.update();
+        },
+      });
+    },
+
+    initWheel() {
       this.map.on("wheel", () => {
+        let currentZoom = this.map.getZoom();
+        if (!this.marker && currentZoom < 12.5) {
+          this.marker = new this.$mapboxgl.Marker({
+            color: "black",
+            draggable: true,
+          })
+            .setLngLat(this.coordinates)
+            .addTo(this.map);
+        }
         
-      })
+        if(this.marker && currentZoom > 12.5){
+            this.marker.remove();
+            this.marker = null
+        }
+      });
     },
 
     async getAddress() {
@@ -481,31 +491,30 @@ export default {
 
     params: debounce(async function (value) {
       await this.$store.dispatch("polygons/get", this.params);
-      try{
+      try {
         let geojson = JSON.parse(this.polygons.geojson);
         let parseJson = geojson.coordinates[0];
         this.geojsonArrays = [];
-      parseJson.forEach((item) => {
-        let itemArray = [item[1], item[0]];
-        this.geojsonArrays.push(itemArray);
-      });
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
-      );
-      for (const coord of this.geojsonArrays) {
-        bounds.extend(coord);
-      }
-      let center = bounds;
+        parseJson.forEach((item) => {
+          let itemArray = [item[1], item[0]];
+          this.geojsonArrays.push(itemArray);
+        });
+        const bounds = new this.$mapboxgl.LngLatBounds(
+          this.geojsonArrays[0],
+          this.geojsonArrays[0]
+        );
+        for (const coord of this.geojsonArrays) {
+          bounds.extend(coord);
+        }
+        let center = bounds;
 
-      this.popup
-        .setLngLat(center.getCenter())
-        .setHTML("Example Address")
-        .addTo(this.map);
-      }catch (error){
+        this.popup
+          .setLngLat(center.getCenter())
+          .setHTML("Example Address")
+          .addTo(this.map);
+      } catch (error) {
         console.log(error);
       }
-
     }, 500),
   },
 };
@@ -521,7 +530,7 @@ export default {
 }
 .text-address {
   font-weight: bold;
-  font-family:Arial, Helvetica, sans-serif ;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 16px;
 }
 .input-class {

@@ -101,7 +101,7 @@ export default {
 
     onSubmit() {
       this.$router.push({
-        path: "map",
+        path: "move",
         query: this.coordinates,
       });
     },
