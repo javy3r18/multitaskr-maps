@@ -34,7 +34,7 @@
         <div class="m-3">
           <hr />
           <div>
-            <b-card-text class="text-address">{{}}</b-card-text>
+            <b-card-text class="text-address">{{inputs.address}}</b-card-text>
           </div>
           <hr />
           <b-tabs content-class="mt-3">
@@ -98,6 +98,10 @@
           <hr />
           <div class="collapsable-text">
             <b-container v-b-toggle.collapse-1>
+              <b-button @click="setAdu">Set ADU</b-button>
+            </b-container>
+            <hr>
+            <b-container v-b-toggle.collapse-1>
               <span>Assesed Values</span>
               <b-icon id="toggleicon" icon="chevron-down"></b-icon>
             </b-container>
@@ -141,7 +145,6 @@ export default {
       access_token:
         "pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g",
       map: {},
-
       search: {},
       inputs: {
         address: null,
@@ -167,10 +170,10 @@ export default {
   },
 
   mounted() {
+    console.log(window);
     this.createMap();
     this.isMapLoaded();
     this.setAutoFill();
-    this.getSelectedAddress();
   },
 
   methods: {
@@ -183,12 +186,16 @@ export default {
         pitch: 45, //inclination
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
+        antialias: true
       });
     },
     
     isMapLoaded(){
       this.map.on("load", () => {
-        this.initZoneTileset();
+        this.getSelectedAddress();
+        this.initJurisdictionTileset();
+        this.initChulaVistaTileset();
+        this.initSanDiegoTileset();
         this.initParcelTileset();
         this.add3DModel();
         this.initWheel();
@@ -198,7 +205,7 @@ export default {
           closeOnClick: false,
         });
         this.map.moveLayer("citysandiego", "building-extrusion");
-        this.map.moveLayer("parceline", "building-extrusion");
+        this.map.moveLayer("parcelLine", "building-extrusion");
 
         this.map.on("mousemove", "citysandiego", (e) => {
           this.map.getCanvas().style.cursor = "pointer";
@@ -213,7 +220,7 @@ export default {
               if (this.hoveredStateId !== null) {
                 this.map.setFeatureState(
                   {
-                    source: "parceltest2",
+                    source: "parcelsTileset",
                     sourceLayer: "citysandiego",
                     id: this.hoveredStateId,
                   },
@@ -223,7 +230,7 @@ export default {
               this.hoveredStateId = e.features[0].id;
               this.map.setFeatureState(
                 {
-                  source: "parceltest2",
+                  source: "parcelsTileset",
                   sourceLayer: "citysandiego",
                   id: this.hoveredStateId,
                 },
@@ -238,13 +245,14 @@ export default {
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
+          this.params = null;
           this.map.getCanvas().style.cursor = "";
           this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
           this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
               {
-                source: "parceltest2",
+                source: "parcelsTileset",
                 sourceLayer: "citysandiego",
                 id: this.hoveredStateId,
               },
@@ -274,9 +282,9 @@ export default {
     },
 
     async getSelectedAddress() {
-      if (this.map.getSource("mainaddress")) {
+      if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
-        this.map.removeSource("mainaddress");
+        this.map.removeSource("mainAddress");
       }
       let params = {
         lat: this.coordinates.lat,
@@ -293,7 +301,7 @@ export default {
         this.geojsonArrays.push(itemArray);
       });
 
-      this.map.addSource("mainaddress", {
+      this.map.addSource("mainAddress", {
         type: "geojson",
         data: {
           type: "Feature",
@@ -307,7 +315,7 @@ export default {
       this.map.addLayer({
         id: "polygon",
         generateId: true,
-        source: "mainaddress",
+        source: "mainAddress",
         type: "fill",
         paint: {
           "fill-color": "#4D04AE",
@@ -339,8 +347,8 @@ export default {
       });
     },
 
-    initZoneTileset() {
-      this.map.addSource("zonetileset", {
+    initJurisdictionTileset() {
+      this.map.addSource("jurisdictionTileset", {
         type: "vector",
         url: "mapbox://multitaskr.sdcountyjurisdictions",
         generateId: true,
@@ -349,11 +357,11 @@ export default {
       this.map.addLayer({
         id: "sdcountyjurisdictions",
         generateId: true,
-        source: "zonetileset",
+        source: "jurisdictionTileset",
         "source-layer": "sdcountyjurisdictions",
         type: "fill",
-        minzoom: 9,
-        maxzoom: 12.5,
+        minzoom: 10,
+        maxzoom: 12,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -367,13 +375,99 @@ export default {
       });
 
       this.map.addLayer({
-        id: "zoneline",
+        id: "jurisdictionLine",
         "source-layer": "sdcountyjurisdictions",
         type: "line",
-        source: "zonetileset",
+        source: "jurisdictionTileset",
         layout: {},
-        minzoom: 9,
-        maxzoom: 12.5,
+        minzoom: 10,
+        maxzoom: 12,
+        paint: {
+          "line-dasharray": [4, 4],
+          "line-color": "#4D04AE",
+          "line-width": 2,
+        },
+      });
+    },
+
+    initChulaVistaTileset(){
+      this.map.addSource("chulaVistaTileset", {
+        type: "vector",
+        url: "mapbox://multitaskr.chulavistazoning",
+        generateId: true,
+      });
+
+      this.map.addLayer({
+        id: "chulavistazoning",
+        generateId: true,
+        source: "chulaVistaTileset",
+        "source-layer": "chulavistazoning",
+        type: "fill",
+        minzoom: 12.5,
+        maxzoom: 14,
+        paint: {
+          "fill-color": "#B591F9",
+          "fill-outline-color": "rgba(66,100,251, 1)",
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            1,
+            0.5,
+          ],
+        },
+      });
+
+      this.map.addLayer({
+        id: "ChilaVistaLine",
+        "source-layer": "chulavistazoning",
+        type: "line",
+        source: "chulaVistaTileset",
+        layout: {},
+        minzoom: 12.5,
+        maxzoom: 14,
+        paint: {
+          "line-dasharray": [4, 4],
+          "line-color": "#4D04AE",
+          "line-width": 2,
+        },
+      });
+    },
+
+    initSanDiegoTileset(){
+      this.map.addSource("SanDiegoTileset", {
+        type: "vector",
+        url: "mapbox://multitaskr.city_sandiego_zoning",
+        generateId: true,
+      });
+
+      this.map.addLayer({
+        id: "city_sandiego_zoning",
+        generateId: true,
+        source: "SanDiegoTileset",
+        "source-layer": "city_sandiego_zoning",
+        type: "fill",
+        minzoom: 12.5,
+        maxzoom: 14,
+        paint: {
+          "fill-color": "#B591F9",
+          "fill-outline-color": "rgba(66,100,251, 1)",
+          "fill-opacity": [
+            "case",
+            ["boolean", ["feature-state", "hover"], false],
+            1,
+            0.5,
+          ],
+        },
+      });
+
+      this.map.addLayer({
+        id: "SanDiegoLine",
+        "source-layer": "city_sandiego_zoning",
+        type: "line",
+        source: "SanDiegoTileset",
+        layout: {},
+        minzoom: 12.5,
+        maxzoom: 14,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
@@ -383,7 +477,7 @@ export default {
     },
 
     initParcelTileset() {
-      this.map.addSource("parceltest2", {
+      this.map.addSource("parcelsTileset", {
         type: "vector",
         url: "mapbox://multitaskr.citysandiego",
         generateId: true,
@@ -392,9 +486,10 @@ export default {
       this.map.addLayer({
         id: "citysandiego",
         generateId: true,
-        source: "parceltest2",
+        source: "parcelsTileset",
         "source-layer": "citysandiego",
         type: "fill",
+        minzoom: 15,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -408,11 +503,12 @@ export default {
       });
 
       this.map.addLayer({
-        id: "parceline",
+        id: "parcelLine",
         "source-layer": "citysandiego",
         type: "line",
-        source: "parceltest2",
+        source: "parcelsTileset",
         layout: {},
+        minzoom: 15,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
@@ -427,12 +523,12 @@ export default {
         id: "custom_layer",
         type: "custom",
         renderingMode: "3d",
-        onAdd: function (map, mbxContext) {
-          window.tb = new Threebox(map, mbxContext, { defaultLights: true });
+        onAdd: function (map, gl) {
+          window.tb = new Threebox(map, gl, { defaultLights: true, enableSelectingObjects: true, enableDraggingObjects: true, enableRotatingObjects: true, enableTooltips: true  });
           var options = {
             obj: "./model/example.fbx",
             type: "fbx",
-            scale: 0.05,
+            scale: 0.03,
             units: "meters",
             rotation: { x: 90, y: 0, z: 0 }, //default rotation
           };
@@ -447,13 +543,19 @@ export default {
       });
     },
 
+    setAdu(){
+      this.map.on("mousemove", "mainAddress", () => {
+
+      })
+    },
+
     initWheel() {
       this.map.on("wheel", () => {
         let currentZoom = this.map.getZoom();
         if (!this.marker && currentZoom < 12.5) {
           this.marker = new this.$mapboxgl.Marker({
             color: "black",
-            draggable: true,
+            draggable: false,
           })
             .setLngLat(this.coordinates)
             .addTo(this.map);
@@ -467,7 +569,6 @@ export default {
     },
 
     async getAddress() {
-      console.log(this.coordinates);
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
@@ -493,7 +594,8 @@ export default {
     },
 
     params: debounce(async function (value) {
-      await this.$store.dispatch("polygons/get", this.params);
+      if (this.params) {
+        await this.$store.dispatch("polygons/get", this.params);
       try {
         let geojson = JSON.parse(this.polygons.geojson);
         let parseJson = geojson.coordinates[0];
@@ -517,6 +619,8 @@ export default {
           .addTo(this.map);
       } catch (error) {
         console.log(error);
+      }
+        
       }
     }, 500),
   },
