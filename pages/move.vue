@@ -168,6 +168,7 @@ export default {
 
   mounted() {
     this.createMap();
+    this.isMapLoaded();
     this.setAutoFill();
     this.getSelectedAddress();
   },
@@ -183,7 +184,9 @@ export default {
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
       });
-
+    },
+    
+    isMapLoaded(){
       this.map.on("load", () => {
         this.initZoneTileset();
         this.initParcelTileset();
