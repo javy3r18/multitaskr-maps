@@ -144,13 +144,6 @@ export default {
       search: {},
       inputs: {
         address: null,
-        apartment: null,
-        city: null,
-        state: null,
-        country: null,
-        id: null,
-        zip: null,
-        county: null,
       },
       coordinates: {
         lng: this.$route.query.lng,
@@ -242,9 +235,7 @@ export default {
           });
           let id = content[0].id;
           if (this.mouseHover != id) {
-            // console.log(content[0].properties.parcel_id);
             this.mouseHover = content[0].id;
-            //this.showPopup(e.lngLat);
             this.params = e.lngLat;
             if (e.features.length > 0) {
               if (this.hoveredStateId !== null) {
@@ -271,7 +262,6 @@ export default {
         });
         this.map.on("click", "citysandiego", (e) => {
           this.coordinates = e.lngLat;
-          this.onClickParcel();
         });
         this.map.on("mouseleave", "citysandiego", () => {
           this.map.getCanvas().style.cursor = "";
@@ -372,21 +362,21 @@ export default {
       await this.$store.dispatch("locations/get", params);
       this.inputs.address = this.items.features[0].place_name;
     },
-    async onClickParcel() {
-      this.getSelectedAddress()
+
+    initWheel(){
+      this.map.on("wheel", () => {
+        
+      })
+    },
+
+    async getAddress() {
+      console.log(this.coordinates);
       let params = {
         lat: this.coordinates.lat,
         lng: this.coordinates.lng,
-        access_token: this.access_token,
       };
       await this.$store.dispatch("locations/get", params);
       this.inputs.address = this.items.features[0].place_name;
-      this.inputs.id = this.items.features[0].id;
-      this.inputs.zip = this.items.features[0].context[1].text;
-      this.inputs.county = this.items.features[0].context[3].text; //p
-      this.inputs.city = this.items.features[0].context[2].text; //p
-      this.inputs.city = this.items.features[0].context[2].text; //p
-      this.inputs.state = this.items.features[0].context[4].text; //p
     },
   },
   watch: {
