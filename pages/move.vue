@@ -159,6 +159,7 @@ export default {
       mouseHover: null,
       popup: null,
       marker: null,
+      currentModel: null
     };
   },
 
@@ -523,17 +524,19 @@ export default {
         id: "custom_layer",
         type: "custom",
         renderingMode: "3d",
-        onAdd: function (map, gl) {
+        onAdd: (map, gl) => {
           window.tb = new Threebox(map, gl, { defaultLights: true, enableSelectingObjects: true, enableDraggingObjects: true, enableRotatingObjects: true, enableTooltips: true  });
-          var options = {
+          let options = {
             obj: "./model/example.fbx",
             type: "fbx",
             scale: 0.03,
             units: "meters",
             rotation: { x: 90, y: 0, z: 0 }, //default rotation
           };
-          tb.loadObj(options, function (model) {
-            let adu = model.setCoords([coord.lng, coord.lat]);
+          tb.loadObj(options, (model) => {
+            this.currentModel = model
+            console.log(model);
+            let adu = this.currentModel.setCoords([coord.lng, coord.lat]);
             tb.add(adu);
           });
         },
@@ -544,8 +547,15 @@ export default {
     },
 
     setAdu(){
-      this.map.on("mousemove", "mainAddress", () => {
+      let a = true
+      this.map.on("mousemove", "polygon", (e) =>{      
+        if(a){
+          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat])
+        }
+      });
 
+      this.map.on("click", () => {
+        a = false
       })
     },
 
