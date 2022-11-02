@@ -1,5 +1,9 @@
 <template>
-  <b-container fluid class="m-0 p-0">
+  <div>
+    <div :style="showMap ? 'display:none' : 'display:inline'">
+      <h1>Cargando...</h1>
+    </div>
+    <b-container :style="showMap ? 'display:inline' : 'visibility: hidden'" fluid class="m-0 p-0">
     <b-row>
       <b-col cols="12">
         <div>
@@ -34,7 +38,7 @@
         <div class="m-3">
           <hr />
           <div>
-            <b-card-text class="text-address">{{inputs.address}}</b-card-text>
+            <b-card-text class="text-address">{{ inputs.address }}</b-card-text>
           </div>
           <hr />
           <b-tabs content-class="mt-3">
@@ -100,7 +104,7 @@
             <b-container v-b-toggle.collapse-1>
               <b-button @click="setAdu">Set ADU</b-button>
             </b-container>
-            <hr>
+            <hr />
             <b-container v-b-toggle.collapse-1>
               <span>Assesed Values</span>
               <b-icon id="toggleicon" icon="chevron-down"></b-icon>
@@ -125,10 +129,11 @@
         </div>
       </b-col>
       <b-col cols="9">
-        <div id="map"></div>
+        <div  id="map"></div>
       </b-col>
     </b-row>
   </b-container>
+  </div>
 </template>
 
 <script>
@@ -159,7 +164,9 @@ export default {
       mouseHover: null,
       popup: null,
       marker: null,
-      currentModel: null
+      currentModel: null,
+      showMap: false,
+      boundsZoom: null
     };
   },
 
@@ -171,10 +178,10 @@ export default {
   },
 
   mounted() {
-    console.log(window);
     this.createMap();
     this.isMapLoaded();
     this.setAutoFill();
+    this.initMarker();
   },
 
   methods: {
@@ -187,11 +194,11 @@ export default {
         pitch: 45, //inclination
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
-        antialias: true
+        antialias: true,
       });
     },
-    
-    isMapLoaded(){
+
+    isMapLoaded() {
       this.map.on("load", () => {
         this.getSelectedAddress();
         this.initJurisdictionTileset();
@@ -199,7 +206,8 @@ export default {
         this.initSanDiegoTileset();
         this.initParcelTileset();
         this.add3DModel();
-        this.initWheel();
+        this.getParcelId();
+        // this.initWheel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
@@ -210,6 +218,7 @@ export default {
 
         this.map.on("mousemove", "citysandiego", (e) => {
           this.map.getCanvas().style.cursor = "pointer";
+
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
@@ -282,6 +291,21 @@ export default {
       });
     },
 
+    getParcelId(){
+      let init = true
+
+          this.map.once("idle", () =>{
+
+            let content = this.map.queryRenderedFeatures(this.marker._pos, {
+            layers: ["citysandiego"],
+          });
+          console.log(content);
+          init = false
+          this.showMap = true
+      })
+      
+    },
+
     async getSelectedAddress() {
       if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
@@ -334,14 +358,18 @@ export default {
         bounds.extend(coord);
       }
 
+      this.boundsZoom = bounds
+
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 20,
       });
+
     },
 
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
+        console.log(event);
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
         this.getSelectedAddress();
@@ -391,7 +419,7 @@ export default {
       });
     },
 
-    initChulaVistaTileset(){
+    initChulaVistaTileset() {
       this.map.addSource("chulaVistaTileset", {
         type: "vector",
         url: "mapbox://multitaskr.chulavistazoning",
@@ -434,7 +462,7 @@ export default {
       });
     },
 
-    initSanDiegoTileset(){
+    initSanDiegoTileset() {
       this.map.addSource("SanDiegoTileset", {
         type: "vector",
         url: "mapbox://multitaskr.city_sandiego_zoning",
@@ -516,6 +544,7 @@ export default {
           "line-width": 2,
         },
       });
+
     },
 
     add3DModel() {
@@ -525,7 +554,13 @@ export default {
         type: "custom",
         renderingMode: "3d",
         onAdd: (map, gl) => {
-          window.tb = new Threebox(map, gl, { defaultLights: true, enableSelectingObjects: true, enableDraggingObjects: true, enableRotatingObjects: true, enableTooltips: true  });
+          window.tb = new Threebox(map, gl, {
+            defaultLights: true,
+            enableSelectingObjects: true,
+            enableDraggingObjects: true,
+            enableRotatingObjects: true,
+            enableTooltips: true,
+          });
           let options = {
             obj: "./model/example.fbx",
             type: "fbx",
@@ -534,7 +569,7 @@ export default {
             rotation: { x: 90, y: 0, z: 0 }, //default rotation
           };
           tb.loadObj(options, (model) => {
-            this.currentModel = model
+            this.currentModel = model;
             console.log(model);
             let adu = this.currentModel.setCoords([coord.lng, coord.lat]);
             tb.add(adu);
@@ -546,37 +581,47 @@ export default {
       });
     },
 
-    setAdu(){
-      let a = true
-      this.map.on("mousemove", "polygon", (e) =>{      
-        if(a){
-          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat])
+    setAdu() {
+      let a = true;
+      this.map.on("mousemove", "polygon", (e) => {
+        if (a) {
+          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
         }
       });
 
       this.map.on("click", () => {
-        a = false
-      })
-    },
-
-    initWheel() {
-      this.map.on("wheel", () => {
-        let currentZoom = this.map.getZoom();
-        if (!this.marker && currentZoom < 12.5) {
-          this.marker = new this.$mapboxgl.Marker({
-            color: "black",
-            draggable: false,
-          })
-            .setLngLat(this.coordinates)
-            .addTo(this.map);
-        }
-        
-        if(this.marker && currentZoom > 12.5){
-            this.marker.remove();
-            this.marker = null
-        }
+        a = false;
       });
     },
+
+    initMarker() {
+      this.marker = new this.$mapboxgl.Marker({
+        color: "black",
+        draggable: false,
+      })
+        .setLngLat(this.coordinates)
+        .addTo(this.map);
+    },
+
+    // initWheel() {
+    //   this.map.on("wheel", () => {
+    //     let currentZoom = this.map.getZoom();
+    //     if (!this.marker && currentZoom < 12.5) {
+    //       this.marker = new this.$mapboxgl.Marker({
+    //         color: "black",
+    //         draggable: false,
+    //       })
+    //         .setLngLat(this.coordinates)
+    //         .addTo(this.map);
+    //         console.log(this.marker);
+    //     }
+
+    //     if (this.marker && currentZoom > 12.5) {
+    //       this.marker.remove();
+    //       this.marker = null;
+    //     }
+    //   });
+    // },
 
     async getAddress() {
       let params = {
@@ -606,31 +651,30 @@ export default {
     params: debounce(async function (value) {
       if (this.params) {
         await this.$store.dispatch("polygons/get", this.params);
-      try {
-        let geojson = JSON.parse(this.polygons.geojson);
-        let parseJson = geojson.coordinates[0];
-        this.geojsonArrays = [];
-        parseJson.forEach((item) => {
-          let itemArray = [item[1], item[0]];
-          this.geojsonArrays.push(itemArray);
-        });
-        const bounds = new this.$mapboxgl.LngLatBounds(
-          this.geojsonArrays[0],
-          this.geojsonArrays[0]
-        );
-        for (const coord of this.geojsonArrays) {
-          bounds.extend(coord);
-        }
-        let center = bounds;
+        try {
+          let geojson = JSON.parse(this.polygons.geojson);
+          let parseJson = geojson.coordinates[0];
+          this.geojsonArrays = [];
+          parseJson.forEach((item) => {
+            let itemArray = [item[1], item[0]];
+            this.geojsonArrays.push(itemArray);
+          });
+          const bounds = new this.$mapboxgl.LngLatBounds(
+            this.geojsonArrays[0],
+            this.geojsonArrays[0]
+          );
+          for (const coord of this.geojsonArrays) {
+            bounds.extend(coord);
+          }
+          let center = bounds;
 
-        this.popup
-          .setLngLat(center.getCenter())
-          .setHTML("Example Address")
-          .addTo(this.map);
-      } catch (error) {
-        console.log(error);
-      }
-        
+          this.popup
+            .setLngLat(center.getCenter())
+            .setHTML("Example Address")
+            .addTo(this.map);
+        } catch (error) {
+          console.log(error);
+        }
       }
     }, 500),
   },
