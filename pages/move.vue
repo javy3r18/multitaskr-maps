@@ -1,138 +1,150 @@
 <template>
   <div>
-    <div :style="showMap ? 'display:none' : 'display:inline'">
-      <h1>Cargando...</h1>
+    <div
+      :style="
+        showMap
+          ? 'display:none'
+          : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
+      "
+    >
+      <h1>Loading...</h1>
     </div>
-    <b-container :style="showMap ? 'display:inline' : 'visibility: hidden'" fluid class="m-0 p-0">
-    <b-row>
-      <b-col cols="12">
-        <div>
-          <b-navbar toggleable="lg" type="dark">
-            <div>
-              <a href="/">
-                <img
-                  src="https://gomultitaskr.com/wp-content/uploads/brizy/imgs/multitaskr-logo-png-202x30x0x0x202x30x1664907017.png"
-                  href="/"
-                />
-              </a>
-            </div>
-            <b-navbar-nav class="ml-auto">
-              <b-nav-form>
-                <b-form-input
-                  class="input-class"
-                  name="address"
-                  placeholder="Enter a California location"
-                  autocomplete="shipping address-line1"
-                ></b-form-input>
-              </b-nav-form>
-            </b-navbar-nav>
-            <b-navbar-nav class="ml-auto">
-              <b-button style="background-color: #4e0eaf">Login</b-button>
-            </b-navbar-nav>
-          </b-navbar>
-        </div>
-      </b-col>
-    </b-row>
-    <b-row>
-      <b-col cols="3">
-        <div class="m-3">
-          <hr />
+    <b-container
+      :style="showMap ? 'display: inline' : 'visibility: hidden'"
+      fluid
+      class="m-0 p-0"
+    >
+      <b-row>
+        <b-col cols="12">
           <div>
-            <b-card-text class="text-address">{{ inputs.address }}</b-card-text>
-          </div>
-          <hr />
-          <b-tabs content-class="mt-3">
-            <b-tab title="Details" active>
-              <div class="details">
-                <b-row>
-                  <b-col cols="6">
-                    <p>
-                      CITY<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      STATE<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-                      LOT AREA<br />
-                      <span>0.82</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-                      YEAR BUILT<br />
-                      <span>2000</span>
-                    </p>
-                  </b-col>
-                  <b-col cols="6">
-                    <p>
-                      COUNTY<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      ZIP CODE<br />
-                      <span>{{}}</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-
-                      PROPERTY ID<br />
-                      <span>{{}}</span>
-                    </p>
-                  </b-col>
-                </b-row>
+            <b-navbar toggleable="lg" type="dark">
+              <div>
+                <a href="/">
+                  <img
+                    src="https://gomultitaskr.com/wp-content/uploads/brizy/imgs/multitaskr-logo-png-202x30x0x0x202x30x1664907017.png"
+                    href="/"
+                  />
+                </a>
               </div>
-            </b-tab>
-            <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
-            <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
-          </b-tabs>
-          <hr />
-          <div class="collapsable-text">
-            <b-container v-b-toggle.collapse-1>
-              <b-button @click="setAdu">Set ADU</b-button>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Assesed Values</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Property details</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Environmental Hazards & Concerns</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Zoning & General Plan</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
+              <b-navbar-nav class="ml-auto">
+                <b-nav-form>
+                  <b-form-input
+                    class="input-class"
+                    name="address"
+                    placeholder="Enter a California location"
+                    autocomplete="shipping address-line1"
+                  ></b-form-input>
+                </b-nav-form>
+              </b-navbar-nav>
+              <b-navbar-nav class="ml-auto">
+                <b-button style="background-color: #4e0eaf">Login</b-button>
+              </b-navbar-nav>
+            </b-navbar>
           </div>
-          <hr />
-        </div>
-      </b-col>
-      <b-col cols="9">
-        <div  id="map"></div>
-      </b-col>
-    </b-row>
-  </b-container>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col cols="3">
+          <div class="m-3">
+            <hr />
+            <div>
+              <b-card-text class="text-address">{{
+                inputs.address
+              }}</b-card-text>
+            </div>
+            <hr />
+            <b-tabs content-class="mt-3">
+              <b-tab title="Details" active>
+                <div class="details">
+                  <b-row>
+                    <b-col cols="6">
+                      <p>
+                        CITY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        STATE<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        LOT AREA<br />
+                        <span>0.82</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        YEAR BUILT<br />
+                        <span>2000</span>
+                      </p>
+                    </b-col>
+                    <b-col cols="6">
+                      <p>
+                        COUNTY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        ZIP CODE<br />
+                        <span>{{}}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+
+                        PROPERTY ID<br />
+                        <span>{{}}</span>
+                      </p>
+                    </b-col>
+                  </b-row>
+                </div>
+              </b-tab>
+              <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
+              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
+            </b-tabs>
+            <hr />
+            <div class="collapsable-text">
+              <b-container v-b-toggle.collapse-1>
+                <b-button @click="setAdu">Set ADU</b-button>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Assesed Values</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Property details</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Environmental Hazards & Concerns</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Zoning & General Plan</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+            </div>
+            <hr />
+          </div>
+        </b-col>
+        <b-col cols="9">
+          <div id="map"></div>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 
@@ -166,7 +178,7 @@ export default {
       marker: null,
       currentModel: null,
       showMap: false,
-      boundsZoom: null
+      boundsZoom: null,
     };
   },
 
@@ -182,6 +194,11 @@ export default {
     this.isMapLoaded();
     this.setAutoFill();
     this.initMarker();
+  },
+
+  created(){
+    let body = document.getElementsByTagName("body")[0];
+    body.style.overflow = "hidden";
   },
 
   methods: {
@@ -291,19 +308,19 @@ export default {
       });
     },
 
-    getParcelId(){
-      let init = true
+    getParcelId() {
+      let init = true;
 
-          this.map.once("idle", () =>{
-
-            let content = this.map.queryRenderedFeatures(this.marker._pos, {
-            layers: ["citysandiego"],
-          });
-          console.log(content);
-          init = false
-          this.showMap = true
-      })
-      
+      this.map.once("idle", () => {
+        let content = this.map.queryRenderedFeatures(this.marker._pos, {
+          layers: ["citysandiego"],
+        });
+        console.log(content);
+        init = false;
+        this.showMap = true;
+        let body = document.getElementsByTagName("body")[0];
+        body.style.overflow = "visible";
+      });
     },
 
     async getSelectedAddress() {
@@ -358,13 +375,12 @@ export default {
         bounds.extend(coord);
       }
 
-      this.boundsZoom = bounds
+      this.boundsZoom = bounds;
 
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 20,
       });
-
     },
 
     onAddressChange() {
@@ -544,7 +560,6 @@ export default {
           "line-width": 2,
         },
       });
-
     },
 
     add3DModel() {
