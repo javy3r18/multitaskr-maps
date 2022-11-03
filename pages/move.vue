@@ -1,138 +1,150 @@
 <template>
   <div>
-    <div :style="showMap ? 'display:none' : 'display:inline'">
-      <h1>Cargando...</h1>
+    <div
+      :style="
+        showMap
+          ? 'display:none'
+          : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
+      "
+    >
+      <h1>Loading...</h1>
     </div>
-    <b-container :style="showMap ? 'display:inline' : 'visibility: hidden'" fluid class="m-0 p-0">
-    <b-row>
-      <b-col cols="12">
-        <div>
-          <b-navbar toggleable="lg" type="dark">
-            <div>
-              <a href="/">
-                <img
-                  src="https://gomultitaskr.com/wp-content/uploads/brizy/imgs/multitaskr-logo-png-202x30x0x0x202x30x1664907017.png"
-                  href="/"
-                />
-              </a>
-            </div>
-            <b-navbar-nav class="ml-auto">
-              <b-nav-form>
-                <b-form-input
-                  class="input-class"
-                  name="address"
-                  placeholder="Enter a California location"
-                  autocomplete="shipping address-line1"
-                ></b-form-input>
-              </b-nav-form>
-            </b-navbar-nav>
-            <b-navbar-nav class="ml-auto">
-              <b-button style="background-color: #4e0eaf">Login</b-button>
-            </b-navbar-nav>
-          </b-navbar>
-        </div>
-      </b-col>
-    </b-row>
-    <b-row>
-      <b-col cols="3">
-        <div class="m-3">
-          <hr />
+    <b-container
+      :style="showMap ? 'display: inline' : 'visibility: hidden'"
+      fluid
+      class="m-0 p-0"
+    >
+      <b-row>
+        <b-col cols="12">
           <div>
-            <b-card-text class="text-address">{{ inputs.address }}</b-card-text>
-          </div>
-          <hr />
-          <b-tabs content-class="mt-3">
-            <b-tab title="Details" active>
-              <div class="details">
-                <b-row>
-                  <b-col cols="6">
-                    <p>
-                      CITY<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      STATE<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-                      LOT AREA<br />
-                      <span>0.82</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-                      YEAR BUILT<br />
-                      <span>2000</span>
-                    </p>
-                  </b-col>
-                  <b-col cols="6">
-                    <p>
-                      COUNTY<br />
-                      <span id="underline">{{}}</span>
-                    </p>
-                    <p>
-                      ZIP CODE<br />
-                      <span>{{}}</span>
-                    </p>
-                    <p>
-                      <b-icon
-                        id="infoicon"
-                        icon="info-circle"
-                        font-scale="0.8"
-                      ></b-icon>
-
-                      PROPERTY ID<br />
-                      <span>{{}}</span>
-                    </p>
-                  </b-col>
-                </b-row>
+            <b-navbar toggleable="lg" type="dark">
+              <div>
+                <a href="/">
+                  <img
+                    src="https://gomultitaskr.com/wp-content/uploads/brizy/imgs/multitaskr-logo-png-202x30x0x0x202x30x1664907017.png"
+                    href="/"
+                  />
+                </a>
               </div>
-            </b-tab>
-            <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
-            <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
-          </b-tabs>
-          <hr />
-          <div class="collapsable-text">
-            <b-container v-b-toggle.collapse-1>
-              <b-button @click="setAdu">Set ADU</b-button>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Assesed Values</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Property details</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Environmental Hazards & Concerns</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
-            <hr />
-            <b-container v-b-toggle.collapse-1>
-              <span>Zoning & General Plan</span>
-              <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-            </b-container>
+              <b-navbar-nav class="ml-auto">
+                <b-nav-form>
+                  <b-form-input
+                    class="input-class"
+                    name="address"
+                    placeholder="Enter a California location"
+                    autocomplete="shipping address-line1"
+                  ></b-form-input>
+                </b-nav-form>
+              </b-navbar-nav>
+              <b-navbar-nav class="ml-auto">
+                <b-button style="background-color: #4e0eaf">Login</b-button>
+              </b-navbar-nav>
+            </b-navbar>
           </div>
-          <hr />
-        </div>
-      </b-col>
-      <b-col cols="9">
-        <div  id="map"></div>
-      </b-col>
-    </b-row>
-  </b-container>
+        </b-col>
+      </b-row>
+      <b-row>
+        <b-col cols="3">
+          <div class="m-3">
+            <hr />
+            <div>
+              <b-card-text class="text-address">{{
+                inputs.address
+              }}</b-card-text>
+            </div>
+            <hr />
+            <b-tabs content-class="mt-3">
+              <b-tab title="Details" active>
+                <div class="details">
+                  <b-row>
+                    <b-col cols="6">
+                      <p>
+                        CITY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        STATE<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        LOT AREA<br />
+                        <span>0.82</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        YEAR BUILT<br />
+                        <span>2000</span>
+                      </p>
+                    </b-col>
+                    <b-col cols="6">
+                      <p>
+                        COUNTY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        ZIP CODE<br />
+                        <span>{{}}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+
+                        PROPERTY ID<br />
+                        <span>{{}}</span>
+                      </p>
+                    </b-col>
+                  </b-row>
+                </div>
+              </b-tab>
+              <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
+              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
+            </b-tabs>
+            <hr />
+            <div class="collapsable-text">
+              <b-container v-b-toggle.collapse-1>
+                <b-button @click="setAdu">Set ADU</b-button>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Assesed Values</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Property details</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Environmental Hazards & Concerns</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+              <hr />
+              <b-container v-b-toggle.collapse-1>
+                <span>Zoning & General Plan</span>
+                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+              </b-container>
+            </div>
+            <hr />
+          </div>
+        </b-col>
+        <b-col cols="9">
+          <div id="map"></div>
+        </b-col>
+      </b-row>
+    </b-container>
   </div>
 </template>
 
@@ -166,7 +178,8 @@ export default {
       marker: null,
       currentModel: null,
       showMap: false,
-      boundsZoom: null
+      boundsZoom: null,
+      selectedCoordinates: null,
     };
   },
 
@@ -179,9 +192,9 @@ export default {
 
   mounted() {
     this.createMap();
+    this.initMarker();
     this.isMapLoaded();
     this.setAutoFill();
-    this.initMarker();
   },
 
   methods: {
@@ -190,7 +203,7 @@ export default {
       this.map = new this.$mapboxgl.Map({
         container: "map",
         style: "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o",
-        zoom: 19,
+        zoom: 17,
         pitch: 45, //inclination
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
@@ -200,7 +213,7 @@ export default {
 
     isMapLoaded() {
       this.map.on("load", () => {
-        this.getSelectedAddress();
+        this.map.setCenter(this.coordinates);
         this.initJurisdictionTileset();
         this.initChulaVistaTileset();
         this.initSanDiegoTileset();
@@ -250,8 +263,7 @@ export default {
           }
         });
         this.map.on("click", "citysandiego", (e) => {
-          this.coordinates = e.lngLat;
-          this.getSelectedAddress();
+          this.coordinates = e.lngLat;     
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
@@ -291,52 +303,32 @@ export default {
       });
     },
 
-    getParcelId(){
-      let init = true
-
-          this.map.once("idle", () =>{
-
-            let content = this.map.queryRenderedFeatures(this.marker._pos, {
-            layers: ["citysandiego"],
-          });
-          console.log(content);
-          init = false
-          this.showMap = true
-      })
-      
+    getParcelId() {
+      this.map.once("idle", () => {
+        console.log(this.marker._pos);
+        let content = this.map.queryRenderedFeatures(this.marker._pos, {
+          layers: ["citysandiego"],
+        });
+        console.log(content);
+        this.selectedCoordinates = content[0].geometry.coordinates[0];
+        console.log(this.selectedCoordinates);
+        this.getSelectedAddress();
+        this.marker.remove();
+        this.showMap = true;
+      });
     },
 
     async getSelectedAddress() {
-      if (this.map.getSource("mainAddress")) {
-        this.map.removeLayer("polygon");
-        this.map.removeSource("mainAddress");
-      }
-      let params = {
-        lat: this.coordinates.lat,
-        lng: this.coordinates.lng,
-      };
-
-      await this.$store.dispatch("polygons/get", params);
-      let geojson = JSON.parse(this.polygons.geojson);
-
-      let parseJson = geojson.coordinates[0];
-      this.geojsonArrays = [];
-      parseJson.forEach((item) => {
-        let itemArray = [item[1], item[0]];
-        this.geojsonArrays.push(itemArray);
-      });
-
       this.map.addSource("mainAddress", {
         type: "geojson",
         data: {
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [this.geojsonArrays],
+            coordinates: [this.selectedCoordinates],
           },
         },
       });
-
       this.map.addLayer({
         id: "polygon",
         generateId: true,
@@ -347,24 +339,20 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-
       this.map.moveLayer("polygon", "building-extrusion");
 
       const bounds = new this.$mapboxgl.LngLatBounds(
-        this.geojsonArrays[0],
-        this.geojsonArrays[0]
+        this.selectedCoordinates[0],
+        this.selectedCoordinates[0]
       );
-      for (const coord of this.geojsonArrays) {
+      for (const coord of this.selectedCoordinates) {
         bounds.extend(coord);
       }
-
-      this.boundsZoom = bounds
-
+      this.boundsZoom = bounds;
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 20,
       });
-
     },
 
     onAddressChange() {
@@ -372,7 +360,7 @@ export default {
         console.log(event);
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        this.getSelectedAddress();
+        // this.getSelectedAddress();
       });
     },
 
@@ -390,7 +378,7 @@ export default {
         "source-layer": "sdcountyjurisdictions",
         type: "fill",
         minzoom: 10,
-        maxzoom: 12,
+        maxzoom: 13,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -410,7 +398,7 @@ export default {
         source: "jurisdictionTileset",
         layout: {},
         minzoom: 10,
-        maxzoom: 12,
+        maxzoom: 13,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
@@ -432,8 +420,8 @@ export default {
         source: "chulaVistaTileset",
         "source-layer": "chulavistazoning",
         type: "fill",
-        minzoom: 12.5,
-        maxzoom: 14,
+        minzoom: 13,
+        maxzoom: 16.5,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -452,8 +440,8 @@ export default {
         type: "line",
         source: "chulaVistaTileset",
         layout: {},
-        minzoom: 12.5,
-        maxzoom: 14,
+        minzoom: 13,
+        maxzoom: 16.5,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
@@ -475,8 +463,8 @@ export default {
         source: "SanDiegoTileset",
         "source-layer": "city_sandiego_zoning",
         type: "fill",
-        minzoom: 12.5,
-        maxzoom: 14,
+        minzoom: 13,
+        maxzoom: 16.5,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -495,8 +483,8 @@ export default {
         type: "line",
         source: "SanDiegoTileset",
         layout: {},
-        minzoom: 12.5,
-        maxzoom: 14,
+        minzoom: 13,
+        maxzoom: 16.5,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
@@ -518,7 +506,7 @@ export default {
         source: "parcelsTileset",
         "source-layer": "citysandiego",
         type: "fill",
-        minzoom: 15,
+        minzoom: 16.5,
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -537,14 +525,13 @@ export default {
         type: "line",
         source: "parcelsTileset",
         layout: {},
-        minzoom: 15,
+        minzoom: 16.5,
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
           "line-width": 2,
         },
       });
-
     },
 
     add3DModel() {
@@ -682,6 +669,10 @@ export default {
 </script>
 
 <style>
+body {
+  overflow: hidden;
+}
+
 #map {
   width: 100%;
   height: 100vh;
