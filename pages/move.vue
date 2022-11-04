@@ -118,7 +118,8 @@
             <hr />
             <div class="collapsable-text">
               <b-container v-b-toggle.collapse-1>
-                <b-button @click="setAdu">Move ADU</b-button>
+                <b-button @click="add3DModel">Set ADU</b-button>
+                <b-button @click="moveAdu">Move ADU</b-button>
               </b-container>
               <hr />
               <b-container v-b-toggle.collapse-1>
@@ -234,7 +235,6 @@ export default {
         this.map.setCenter(this.coordinates);
         this.initTilesets();
         this.initParcelTileset();
-        this.add3DModel();
         this.getParcelFeatures();
         this.initZoomLevel();
 
@@ -468,6 +468,9 @@ export default {
     },
 
     add3DModel() {
+      if(this.map.getLayer('custom_layer')){
+        this.map.removeLayer('custom_layer')
+      }
       let coord = this.coordinates;
       this.map.addLayer({
         id: "custom_layer",
@@ -501,7 +504,7 @@ export default {
       });
     },
 
-    setAdu() {
+    moveAdu() {
       let a = true;
       this.map.on("mousemove", "polygon", (e) => {
         if (a) {
