@@ -68,7 +68,7 @@
                       </p>
                       <p>
                         PARCEL ID<br />
-                        <span id="underline">{{parcelId}}</span>
+                        <span id="underline">{{ parcelId }}</span>
                       </p>
                       <p>
                         <b-icon
@@ -148,19 +148,23 @@
         <b-col cols="9">
           <div id="map"></div>
           <div class="BoundIcon">
-          <div
-            title="Reset parcel view"
-            @click="currentParcel"
-            id="toggleicon"
-            class="location-icon"
-          ><b-icon icon="cursor"></b-icon></div>
-        </div>
-        <div class="PlusMinusIcons">
-          <b-button-group vertical>
-            <b-button @click="setZoomIn" style="background-color: #4D04AE">+</b-button>
-            <b-button @click="setZoomOut" variant="secondary">-</b-button>
-          </b-button-group>
-        </div>
+            <div
+              title="Reset parcel view"
+              @click="currentParcel"
+              id="toggleicon"
+              class="location-icon"
+            >
+              <b-icon icon="cursor"></b-icon>
+            </div>
+          </div>
+          <div class="PlusMinusIcons">
+            <b-button-group vertical>
+              <b-button @click="setZoomIn" style="background-color: #4d04ae"
+                >+</b-button
+              >
+              <b-button @click="setZoomOut" variant="secondary">-</b-button>
+            </b-button-group>
+          </div>
         </b-col>
       </b-row>
     </b-container>
@@ -237,6 +241,7 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
+        this.moveModel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
@@ -279,11 +284,11 @@ export default {
         });
 
         this.map.on("click", "citysandiego", (e) => {
-          this.coordinates = e.lngLat
+          this.coordinates = e.lngLat;
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
-          this.parcelFeatures = content[0]
+          this.parcelFeatures = content[0];
           this.selectedParcel();
         });
 
@@ -307,6 +312,58 @@ export default {
       });
     },
 
+    moveModel() {
+      let poly = [
+        [-117.04032221565436, 32.56788775850487],
+        [-117.04047227600599, 32.56772503030933],
+        [-117.04145086617561, 32.562454274516284],
+        [-117.03323380160447, 32.562619119624316],
+        [-117.028235431521, 32.56763679941878],
+      ];
+
+      this.map.addSource("floor", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            coordinates: [poly],
+          },
+        },
+      });
+      this.map.addLayer({
+        id: "floorLayer",
+        generateId: true,
+        source: "floor",
+        type: "fill",
+        paint: {
+          "fill-color": "#4D04AE",
+          "fill-outline-color": "rgba(66,100,251, 1)",
+        },
+      });
+
+      var polys = this.$turf.polygon([
+        poly
+      ]);
+
+      //calculates the centroid of the polygon
+      var center = this.$turf.centroid(polys);
+
+      var from = this.$turf.point([
+        center.geometry.coordinates[0],
+        center.geometry.coordinates[1],
+      ]);
+
+      var to = this.$turf.point([-117.028235431521, 32.56763679941878]);
+
+      var bearing = this.$turf.rhumbBearing(from, to);
+
+      //calculates the distance between the points
+      var distance = this.$turf.rhumbDistance(from, to);
+
+      var translatedPoly = turf.transformTranslate(polys, distance, bearing);
+    },
+
     setAutoFill() {
       this.search = this.$search.autofill({
         accessToken: this.access_token,
@@ -328,7 +385,7 @@ export default {
     },
 
     selectedParcel() {
-      let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0]
+      let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
       if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
         this.map.removeSource("mainAddress");
@@ -354,7 +411,7 @@ export default {
         },
       });
 
-      this.parcelId = this.parcelFeatures.properties.parcel_id
+      this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
         parcelCoordinates[0],
@@ -373,59 +430,64 @@ export default {
       this.search.addEventListener("retrieve", (event) => {
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        this.getParcelFeatures
+        this.getParcelFeatures;
         this.selectedParcel(); // cambiar esta opcion a recargar la pagina con nuevas coordenadas
       });
     },
 
-    initTilesets(){
+    initTilesets() {
       let Sources = {
-        // key = Source name, value = layer fill id, layer line id, minzoom, maxzoon 
-        jurisdictionTileset: ['sdcountyjurisdictions','jurisdictionLine', 10, 13 ],
-        chulaVistaTileset: ['chulavistazoning','chulaVistaLine', 13, 16.5],
-        sanDiegoTileset: ['city_sandiego_zoning','sanDiegoLine', 13, 16.5],
-      }
+        // key = Source name, value = layer fill id, layer line id, minzoom, maxzoon
+        jurisdictionTileset: [
+          "sdcountyjurisdictions",
+          "jurisdictionLine",
+          10,
+          13,
+        ],
+        chulaVistaTileset: ["chulavistazoning", "chulaVistaLine", 13, 16.5],
+        sanDiegoTileset: ["city_sandiego_zoning", "sanDiegoLine", 13, 16.5],
+      };
 
-      for(const [key, value] of Object.entries(Sources)){
+      for (const [key, value] of Object.entries(Sources)) {
         this.map.addSource(key, {
-        type: "vector",
-        url: "mapbox://multitaskr." + value[0],
-        generateId: true,
-      });
-      this.map.addLayer({
-        id: value[0],
-        generateId: true,
-        source: key,
-        "source-layer": value[0],
-        type: "fill",
-        minzoom: value[2],
-        maxzoom: value[3],
-        paint: {
-          "fill-color": "#B591F9",
-          "fill-outline-color": "rgba(66,100,251, 1)",
-          "fill-opacity": [
-            "case",
-            ["boolean", ["feature-state", "hover"], false],
-            1,
-            0.5,
-          ],
-        },
-      });
-      this.map.addLayer({
-        id: value[1],
-        "source-layer": value[0],
-        type: "line",
-        source: key,
-        layout: {},
-        minzoom: value[2],
-        maxzoom: value[3],
-        paint: {
-          "line-dasharray": [4, 4],
-          "line-color": "#4D04AE",
-          "line-width": 2,
-        },
-      });
-    }
+          type: "vector",
+          url: "mapbox://multitaskr." + value[0],
+          generateId: true,
+        });
+        this.map.addLayer({
+          id: value[0],
+          generateId: true,
+          source: key,
+          "source-layer": value[0],
+          type: "fill",
+          minzoom: value[2],
+          maxzoom: value[3],
+          paint: {
+            "fill-color": "#B591F9",
+            "fill-outline-color": "rgba(66,100,251, 1)",
+            "fill-opacity": [
+              "case",
+              ["boolean", ["feature-state", "hover"], false],
+              1,
+              0.5,
+            ],
+          },
+        });
+        this.map.addLayer({
+          id: value[1],
+          "source-layer": value[0],
+          type: "line",
+          source: key,
+          layout: {},
+          minzoom: value[2],
+          maxzoom: value[3],
+          paint: {
+            "line-dasharray": [4, 4],
+            "line-color": "#4D04AE",
+            "line-width": 2,
+          },
+        });
+      }
     },
 
     initParcelTileset() {
@@ -468,8 +530,8 @@ export default {
     },
 
     add3DModel() {
-      if(this.map.getLayer('custom_layer')){
-        this.map.removeLayer('custom_layer')
+      if (this.map.getLayer("custom_layer")) {
+        this.map.removeLayer("custom_layer");
       }
       let coord = this.coordinates;
       this.map.addLayer({
@@ -553,7 +615,7 @@ export default {
       this.inputs.address = this.items.features[0].place_name;
     },
 
-    currentParcel(){
+    currentParcel() {
       this.map.easeTo({
         center: this.coordinates,
         zoom: 19,
@@ -562,13 +624,13 @@ export default {
       });
     },
 
-    setZoomIn(){
-      this.map.zoomIn()
+    setZoomIn() {
+      this.map.zoomIn();
     },
 
-    setZoomOut(){
-      this.map.zoomOut()
-    }
+    setZoomOut() {
+      this.map.zoomOut();
+    },
   },
   watch: {
     coordinates: {
@@ -699,7 +761,7 @@ body {
   border-radius: 100%;
 }
 
-.location-icon{
+.location-icon {
   display: flex;
   justify-content: center;
 }
