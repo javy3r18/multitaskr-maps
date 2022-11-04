@@ -263,7 +263,11 @@ export default {
           }
         });
         this.map.on("click", "citysandiego", (e) => {
-          this.coordinates = e.lngLat;     
+          this.showMap = false;
+          this.coordinates = e.lngLat;  
+          this.initMarker();
+          this.getParcelId();
+          //this.getSelectedAddress();
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
@@ -312,20 +316,22 @@ export default {
         console.log(content);
         this.selectedCoordinates = content[0].geometry.coordinates[0];
         console.log(this.selectedCoordinates);
-        this.getSelectedAddress();
         this.marker.remove();
-        this.showMap = true;
+        this.getSelectedAddress(this.selectedCoordinates);
       });
     },
 
-    async getSelectedAddress() {
+    async getSelectedAddress(coords) {
+
+      if(this.map.getLayer("polygon")) this.map.removeLayer("polygon");
+      if(this.map.getSource("mainAddress")) this.map.removeSource("mainAddress");
       this.map.addSource("mainAddress", {
         type: "geojson",
         data: {
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [this.selectedCoordinates],
+            coordinates: [coords],
           },
         },
       });
@@ -340,14 +346,14 @@ export default {
         },
       });
       this.map.moveLayer("polygon", "building-extrusion");
-
       const bounds = new this.$mapboxgl.LngLatBounds(
         this.selectedCoordinates[0],
         this.selectedCoordinates[0]
-      );
-      for (const coord of this.selectedCoordinates) {
-        bounds.extend(coord);
-      }
+        );
+        for (const coord of this.selectedCoordinates) {
+          bounds.extend(coord);
+        }
+        this.showMap = true;
       this.boundsZoom = bounds;
       this.map.fitBounds(bounds, {
         padding: 20,
@@ -624,7 +630,11 @@ export default {
     coordinates: {
       deep: true,
       handler(value, old) {
+        this.$router.push({
+          query: value
+        });
         this.getAddress();
+        console.log(this.polygons)
       },
     },
 
