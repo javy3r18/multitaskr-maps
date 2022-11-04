@@ -1,6 +1,7 @@
 export default {
   // Disable server-side rendering: https://go.nuxtjs.dev/ssr-mode
   ssr: false,
+  target:"static",
   // Global page headers: https://go.nuxtjs.dev/config-head
   head: {
     title: "multitaskr-maps",
@@ -15,9 +16,11 @@ export default {
     ],
     link: [
       { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
-      { rel:"stylesheet", href:"https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css"}
+      {
+        rel: "stylesheet",
+        href: "https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css",
+      },
     ],
-
   },
 
   // Global CSS: https://go.nuxtjs.dev/config-css
@@ -30,8 +33,11 @@ export default {
     },
     {
       src: "~/plugins/mapboxsearch.js",
-    }
-  ],  
+    },
+    {
+      src: "~/plugins/mapboxgeo.js",
+    },
+  ],
 
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
@@ -43,6 +49,7 @@ export default {
   modules: [
     // https://go.nuxtjs.dev/bootstrap
     "bootstrap-vue/nuxt",
+    "@nuxtjs/axios",
   ],
 
   // Build Configuration: https://go.nuxtjs.dev/config-build

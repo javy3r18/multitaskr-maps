@@ -1,0 +1,61 @@
+<template>
+    <div><b-row>
+      <b-col>
+        <div class="m-3">
+          <form class="d-flex flex-column">
+            <input
+              v-model="inputs.address"
+              class="my-2"
+              name="address"
+              placeholder="Address"
+              type="text"
+              autocomplete="address-line1"
+            />
+            <input
+            v-model="inputs.aparment"
+              class="my-2"
+              name="apartment"
+              placeholder="Apartment number"
+              type="text"
+              autocomplete="address-line2"
+            />
+            <input
+            v-model="inputs.city"
+              class="my-2"
+              name="city"
+              placeholder="City"
+              type="text"
+              autocomplete="address-level2"
+            />
+            <input
+            v-model="inputs.state"
+              class="my-2"
+              name="state"
+              placeholder="State"
+              type="text"
+              autocomplete="address-level1"
+            />
+            <input
+            v-model="inputs.country"
+              class="my-2"
+              name="country"
+              placeholder="Country"
+              type="text"
+              autocomplete="country"
+            />
+            <input
+            v-model="inputs.postcode"
+              class="my-2"
+              name="postcode"
+              placeholder="Postcode"
+              type="text"
+              autocomplete="postal-code"
+            />
+          </form>
+        </div>
+      </b-col>
+      <b-col cols="10">
+        <div id="map"></div>
+      </b-col>
+    </b-row></div>
+</template>

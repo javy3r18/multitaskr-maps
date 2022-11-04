@@ -1,74 +1,117 @@
 <template>
-  <b-container fluid class="m-0 p-0">
-    <form>
-<input name="address" autocomplete="shipping address-line1">
-<input name="apartment" autocomplete="shipping address-line2">
-<input name="city" autocomplete="shipping address-level2">
-<input name="state" autocomplete="shipping address-level1">
-<input name="country" autocomplete="shipping country">
-</form>
-    <div id="map"></div>
+  <b-container>
+    <form
+      @submit.prevent="onSubmit"
+      class="d-flex justify-content-center align-items-center"
+      style="height: 100vh"
+    >
+      <div>
+        <b-img
+          src="../assets/images/mk_logo.png"
+          fluid
+          alt="Responsive image"
+        ></b-img>
+        <b-row class="my-5">
+          <div
+            style="
+              color: #c6c6c6;
+              width: 10%;
+              border-top: 1px solid #c6c6c6;
+              border-bottom: 1px solid #c6c6c6;
+              border-left: 1px solid #c6c6c6;
+              border-right: none;
+              border-radius: 10px 0 0 10px;
+            "
+            class="d-flex justify-content-center align-items-center"
+          >
+            <b-icon icon="search"></b-icon>
+          </div>
+          <input
+            style="
+              width: 70%;
+              height: 40px;
+              border-top: 1px solid #c6c6c6;
+              border-bottom: 1px solid #c6c6c6;
+              border-left: none;
+              border-right: none;
+              border-radius: none;
+            "
+            name="address"
+            placeholder="search address..."
+            autocomplete="shipping address-line1"
+            v-model="form.address"
+            required
+            id="address"
+          />
+          <button
+            type="submit"
+            class="d-flex justify-content-center align-items-center"
+            style="
+              width: 20%;
+              background-color: #4d04af;
+              border-radius: 0 10px 10px 0;
+              color: white;
+            "
+          >
+            <span class="mx-2">Go</span
+            ><b-icon icon="arrow-right-circle-fill"></b-icon>
+          </button>
+        </b-row>
+      </div>
+    </form>
   </b-container>
 </template>
-
 <script>
+import Vue from "vue";
+import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
+Vue.use(BootstrapVue);
+Vue.use(BootstrapVueIcons);
 export default {
   data() {
     return {
       access_token:
-        "pk.eyJ1IjoiamF2eTNyMTgiLCJhIjoiY2w4b3Q3aTdmMDB6djNvbzhycGtmYXF1MSJ9.55Zc-lWR2Oc7YzjBt9S5ow",
-      map: {},
+        "pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g",
+      form: {
+        address: null,
+      },
+      coordinates: {
+        lat: 33.16944,
+        lng: -117.07504,
+      },
+      search: {},
     };
   },
 
   mounted() {
-    this.createMap();
+    this.initSearch();
   },
 
   methods: {
-    createMap() {
-      this.$mapboxgl.accessToken = this.access_token;
-      this.map = new this.$mapboxgl.Map({
-        container: "map",
-        style: "mapbox://styles/mapbox/streets-v11",
-        zoom: 11,
-        center: [107.61861, -6.90389],
-      });
-
-      this.$search.autofill({
+    initSearch() {
+      this.search = this.$search.autofill({
         accessToken: this.access_token,
+        options: { country: "us" },
       });
 
-      // const search = new MapboxSearchBox();
-      // search.accessToken = this.access_token;
-      // this.map.addControl(search);
+      this.search.addEventListener("retrieve", (event) => {
+        this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
+        this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
+      });
+    },
 
-      // this.map.addControl(
-      //   new this.$mapboxgl.FullscreenControl({
-      //     container: document.querySelector("body"),
-      //   })
-      // );
-
-      // this.map.addControl(
-      //   new this.$mapboxgl.GeolocateControl({
-      //     positionOptions: {
-      //       enableHighAccuracy: true,
-      //     },
-      //     trackUserLocation: true,
-      //     showUserHeading: true,
-      //   })
-      // );
-
-      // mapboxsearch.autofill({
-      //   accessToken: this.access_token,
-      // });
+    onSubmit() {
+      this.$router.push({
+        path: "move",
+        query: this.coordinates,
+      });
     },
   },
 };
 </script>
 <style>
-#map {
-  width: 100%;
-  height: 100vh;
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
 }
 </style>

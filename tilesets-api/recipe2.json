@@ -1,0 +1,10 @@
+{
+    "version": 1,
+    "layers": {
+      "parcel2": {
+        "source": "mapbox://tileset-source/javy3r18/parcel2",
+        "minzoom": 14,
+        "maxzoom": 16
+      }
+    }
+  }
