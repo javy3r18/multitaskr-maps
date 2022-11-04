@@ -67,6 +67,10 @@
                         <span id="underline">{{}}</span>
                       </p>
                       <p>
+                        PARCEL ID<br />
+                        <span id="underline">{{parcelId}}</span>
+                      </p>
+                      <p>
                         <b-icon
                           id="infoicon"
                           icon="info-circle"
@@ -114,7 +118,8 @@
             <hr />
             <div class="collapsable-text">
               <b-container v-b-toggle.collapse-1>
-                <b-button @click="setAdu">Set ADU</b-button>
+                <b-button @click="setAdu">Move ADU</b-button>
+                <b-button @click="currentParcel">View current parcel</b-button>
               </b-container>
               <hr />
               <b-container v-b-toggle.collapse-1>
@@ -178,8 +183,8 @@ export default {
       marker: null,
       currentModel: null,
       showMap: false,
-      boundsZoom: null,
-      selectedCoordinates: null,
+      parcelFeatures: null,
+      parcelId: null,
     };
   },
 
@@ -214,24 +219,21 @@ export default {
     isMapLoaded() {
       this.map.on("load", () => {
         this.map.setCenter(this.coordinates);
-        this.initJurisdictionTileset();
-        this.initChulaVistaTileset();
-        this.initSanDiegoTileset();
+        this.initTilesets();
         this.initParcelTileset();
         this.add3DModel();
-        this.getParcelId();
-        // this.initWheel();
+        this.getParcelFeatures();
+        this.initZoomLevel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
         });
+
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parcelLine", "building-extrusion");
-
         this.map.on("mousemove", "citysandiego", (e) => {
           this.map.getCanvas().style.cursor = "pointer";
-
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
@@ -262,12 +264,14 @@ export default {
             }
           }
         });
+
         this.map.on("click", "citysandiego", (e) => {
-          this.showMap = false;
-          this.coordinates = e.lngLat;  
-          this.initMarker();
-          this.getParcelId();
-          //this.getSelectedAddress();
+          this.coordinates = e.lngLat
+          let content = this.map.queryRenderedFeatures(e.point, {
+            layers: ["citysandiego"],
+          });
+          this.parcelFeatures = content[0]
+          this.selectedParcel();
         });
 
         this.map.on("mouseleave", "citysandiego", () => {
@@ -297,41 +301,31 @@ export default {
       });
     },
 
-    locationCenter() {
-      this.map.easeTo({
-        center: this.coordinates,
-        zoom: 15,
-        speed: 3,
-        duration: 2500,
-        curve: 2,
-      });
-    },
-
-    getParcelId() {
+    getParcelFeatures() {
       this.map.once("idle", () => {
-        console.log(this.marker._pos);
         let content = this.map.queryRenderedFeatures(this.marker._pos, {
           layers: ["citysandiego"],
         });
-        console.log(content);
-        this.selectedCoordinates = content[0].geometry.coordinates[0];
-        console.log(this.selectedCoordinates);
+        this.parcelFeatures = content[0];
+        this.selectedParcel();
         this.marker.remove();
-        this.getSelectedAddress(this.selectedCoordinates);
+        this.showMap = true;
       });
     },
 
-    async getSelectedAddress(coords) {
-
-      if(this.map.getLayer("polygon")) this.map.removeLayer("polygon");
-      if(this.map.getSource("mainAddress")) this.map.removeSource("mainAddress");
+    selectedParcel() {
+      let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0]
+      if (this.map.getSource("mainAddress")) {
+        this.map.removeLayer("polygon");
+        this.map.removeSource("mainAddress");
+      }
       this.map.addSource("mainAddress", {
         type: "geojson",
         data: {
           type: "Feature",
           geometry: {
             type: "Polygon",
-            coordinates: [coords],
+            coordinates: [parcelCoordinates],
           },
         },
       });
@@ -345,46 +339,53 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
+
+      this.parcelId = this.parcelFeatures.properties.parcel_id
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
-        this.selectedCoordinates[0],
-        this.selectedCoordinates[0]
-        );
-        for (const coord of this.selectedCoordinates) {
-          bounds.extend(coord);
-        }
-        this.showMap = true;
-      this.boundsZoom = bounds;
+        parcelCoordinates[0],
+        parcelCoordinates[0]
+      );
+      for (const coord of parcelCoordinates) {
+        bounds.extend(coord);
+      }
       this.map.fitBounds(bounds, {
         padding: 20,
-        zoom: 20,
+        zoom: 19,
       });
     },
 
     onAddressChange() {
       this.search.addEventListener("retrieve", (event) => {
-        console.log(event);
         this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
         this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        // this.getSelectedAddress();
+        this.getParcelFeatures
+        this.selectedParcel(); // cambiar esta opcion a recargar la pagina con nuevas coordenadas
       });
     },
 
-    initJurisdictionTileset() {
-      this.map.addSource("jurisdictionTileset", {
+    initTilesets(){
+      let Sources = {
+        // key = Source name, value = layer fill id, layer line id, minzoom, maxzoon 
+        jurisdictionTileset: ['sdcountyjurisdictions','jurisdictionLine', 10, 13 ],
+        chulaVistaTileset: ['chulavistazoning','chulaVistaLine', 13, 16.5],
+        sanDiegoTileset: ['city_sandiego_zoning','sanDiegoLine', 13, 16.5],
+      }
+
+      for(const [key, value] of Object.entries(Sources)){
+        this.map.addSource(key, {
         type: "vector",
-        url: "mapbox://multitaskr.sdcountyjurisdictions",
+        url: "mapbox://multitaskr." + value[0],
         generateId: true,
       });
-
       this.map.addLayer({
-        id: "sdcountyjurisdictions",
+        id: value[0],
         generateId: true,
-        source: "jurisdictionTileset",
-        "source-layer": "sdcountyjurisdictions",
+        source: key,
+        "source-layer": value[0],
         type: "fill",
-        minzoom: 10,
-        maxzoom: 13,
+        minzoom: value[2],
+        maxzoom: value[3],
         paint: {
           "fill-color": "#B591F9",
           "fill-outline-color": "rgba(66,100,251, 1)",
@@ -396,107 +397,21 @@ export default {
           ],
         },
       });
-
       this.map.addLayer({
-        id: "jurisdictionLine",
-        "source-layer": "sdcountyjurisdictions",
+        id: value[1],
+        "source-layer": value[0],
         type: "line",
-        source: "jurisdictionTileset",
+        source: key,
         layout: {},
-        minzoom: 10,
-        maxzoom: 13,
+        minzoom: value[2],
+        maxzoom: value[3],
         paint: {
           "line-dasharray": [4, 4],
           "line-color": "#4D04AE",
           "line-width": 2,
         },
       });
-    },
-
-    initChulaVistaTileset() {
-      this.map.addSource("chulaVistaTileset", {
-        type: "vector",
-        url: "mapbox://multitaskr.chulavistazoning",
-        generateId: true,
-      });
-
-      this.map.addLayer({
-        id: "chulavistazoning",
-        generateId: true,
-        source: "chulaVistaTileset",
-        "source-layer": "chulavistazoning",
-        type: "fill",
-        minzoom: 13,
-        maxzoom: 16.5,
-        paint: {
-          "fill-color": "#B591F9",
-          "fill-outline-color": "rgba(66,100,251, 1)",
-          "fill-opacity": [
-            "case",
-            ["boolean", ["feature-state", "hover"], false],
-            1,
-            0.5,
-          ],
-        },
-      });
-
-      this.map.addLayer({
-        id: "ChilaVistaLine",
-        "source-layer": "chulavistazoning",
-        type: "line",
-        source: "chulaVistaTileset",
-        layout: {},
-        minzoom: 13,
-        maxzoom: 16.5,
-        paint: {
-          "line-dasharray": [4, 4],
-          "line-color": "#4D04AE",
-          "line-width": 2,
-        },
-      });
-    },
-
-    initSanDiegoTileset() {
-      this.map.addSource("SanDiegoTileset", {
-        type: "vector",
-        url: "mapbox://multitaskr.city_sandiego_zoning",
-        generateId: true,
-      });
-
-      this.map.addLayer({
-        id: "city_sandiego_zoning",
-        generateId: true,
-        source: "SanDiegoTileset",
-        "source-layer": "city_sandiego_zoning",
-        type: "fill",
-        minzoom: 13,
-        maxzoom: 16.5,
-        paint: {
-          "fill-color": "#B591F9",
-          "fill-outline-color": "rgba(66,100,251, 1)",
-          "fill-opacity": [
-            "case",
-            ["boolean", ["feature-state", "hover"], false],
-            1,
-            0.5,
-          ],
-        },
-      });
-
-      this.map.addLayer({
-        id: "SanDiegoLine",
-        "source-layer": "city_sandiego_zoning",
-        type: "line",
-        source: "SanDiegoTileset",
-        layout: {},
-        minzoom: 13,
-        maxzoom: 16.5,
-        paint: {
-          "line-dasharray": [4, 4],
-          "line-color": "#4D04AE",
-          "line-width": 2,
-        },
-      });
+    }
     },
 
     initParcelTileset() {
@@ -505,7 +420,6 @@ export default {
         url: "mapbox://multitaskr.citysandiego",
         generateId: true,
       });
-
       this.map.addLayer({
         id: "citysandiego",
         generateId: true,
@@ -524,7 +438,6 @@ export default {
           ],
         },
       });
-
       this.map.addLayer({
         id: "parcelLine",
         "source-layer": "citysandiego",
@@ -581,7 +494,6 @@ export default {
           this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
         }
       });
-
       this.map.on("click", () => {
         a = false;
       });
@@ -596,25 +508,24 @@ export default {
         .addTo(this.map);
     },
 
-    // initWheel() {
-    //   this.map.on("wheel", () => {
-    //     let currentZoom = this.map.getZoom();
-    //     if (!this.marker && currentZoom < 12.5) {
-    //       this.marker = new this.$mapboxgl.Marker({
-    //         color: "black",
-    //         draggable: false,
-    //       })
-    //         .setLngLat(this.coordinates)
-    //         .addTo(this.map);
-    //         console.log(this.marker);
-    //     }
-
-    //     if (this.marker && currentZoom > 12.5) {
-    //       this.marker.remove();
-    //       this.marker = null;
-    //     }
-    //   });
-    // },
+    initZoomLevel() {
+      this.map.on("zoom", () => {
+        let currentZoom = this.map.getZoom();
+        if (!this.marker && currentZoom < 15) {
+          this.popup.remove();
+          this.marker = new this.$mapboxgl.Marker({
+            color: "black",
+            draggable: false,
+          })
+            .setLngLat(this.coordinates)
+            .addTo(this.map);
+        }
+        if (this.marker && currentZoom > 15) {
+          this.marker.remove();
+          this.marker = null;
+        }
+      });
+    },
 
     async getAddress() {
       let params = {
@@ -624,27 +535,29 @@ export default {
       await this.$store.dispatch("locations/get", params);
       this.inputs.address = this.items.features[0].place_name;
     },
-  },
 
+    currentParcel(){
+      this.map.easeTo({
+        center: this.coordinates,
+        zoom: 19,
+        speed: 3,
+        duration: 1500,
+      });
+    }
+  },
   watch: {
     coordinates: {
       deep: true,
       handler(value, old) {
-        this.$router.push({
-          query: value
-        });
         this.getAddress();
-        console.log(this.polygons)
       },
     },
-
     search: {
       deep: true,
       handler(value, old) {
         this.onAddressChange();
       },
     },
-
     params: debounce(async function (value) {
       if (this.params) {
         await this.$store.dispatch("polygons/get", this.params);
@@ -664,7 +577,6 @@ export default {
             bounds.extend(coord);
           }
           let center = bounds;
-
           this.popup
             .setLngLat(center.getCenter())
             .setHTML("Example Address")
@@ -682,7 +594,6 @@ export default {
 body {
   overflow: hidden;
 }
-
 #map {
   width: 100%;
   height: 100vh;
@@ -722,12 +633,10 @@ body {
   font-weight: bold;
   font-family: Arial, Helvetica, sans-serif;
 }
-
 #underline {
   color: #4e0eaf;
   text-decoration: underline;
 }
-
 #toggleicon {
   display: inline-block;
   float: right;
