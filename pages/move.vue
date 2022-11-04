@@ -119,7 +119,6 @@
             <div class="collapsable-text">
               <b-container v-b-toggle.collapse-1>
                 <b-button @click="setAdu">Move ADU</b-button>
-                <b-button @click="currentParcel">View current parcel</b-button>
               </b-container>
               <hr />
               <b-container v-b-toggle.collapse-1>
@@ -147,6 +146,20 @@
         </b-col>
         <b-col cols="9">
           <div id="map"></div>
+          <div class="BoundIcon">
+          <div
+            title="Reset parcel view"
+            @click="currentParcel"
+            id="toggleicon"
+            class="location-icon"
+          ><b-icon icon="cursor"></b-icon></div>
+        </div>
+        <div class="PlusMinusIcons">
+          <b-button-group vertical>
+            <b-button @click="setZoomIn" style="background-color: #4D04AE">+</b-button>
+            <b-button @click="setZoomOut" variant="secondary">-</b-button>
+          </b-button-group>
+        </div>
         </b-col>
       </b-row>
     </b-container>
@@ -306,6 +319,7 @@ export default {
         let content = this.map.queryRenderedFeatures(this.marker._pos, {
           layers: ["citysandiego"],
         });
+        console.log(content);
         this.parcelFeatures = content[0];
         this.selectedParcel();
         this.marker.remove();
@@ -543,6 +557,14 @@ export default {
         speed: 3,
         duration: 1500,
       });
+    },
+
+    setZoomIn(){
+      this.map.zoomIn()
+    },
+
+    setZoomOut(){
+      this.map.zoomOut()
     }
   },
   watch: {
@@ -649,6 +671,36 @@ body {
 #infoicon:hover {
   color: #4e0eaf;
 }
+
+.PlusMinusIcons {
+  position: absolute;
+  right: 0;
+  top: 80px;
+  right: 30px;
+}
+.BoundIcon {
+  position: absolute;
+  right: 0;
+  top: 20px;
+  right: 30px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: initial;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff;
+  border: 1px solid #d7dbdd;
+  font-size: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 100%;
+}
+
+.location-icon{
+  display: flex;
+  justify-content: center;
+}
+
 .mapboxgl-popup {
   max-width: 400px;
   font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
