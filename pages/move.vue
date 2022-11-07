@@ -241,7 +241,7 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
-        this.moveModel();
+        // this.moveModel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
@@ -258,7 +258,8 @@ export default {
           let id = content[0].id;
           if (this.mouseHover != id) {
             this.mouseHover = content[0].id;
-            this.params = e.lngLat;
+            this.showPopup(content);
+            // this.params = e.lngLat;
             if (e.features.length > 0) {
               if (this.hoveredStateId !== null) {
                 this.map.setFeatureState(
@@ -631,7 +632,24 @@ export default {
     setZoomOut() {
       this.map.zoomOut();
     },
+
+    showPopup(features){
+      let coordinates = features[0].geometry.coordinates[0]
+      const bounds = new this.$mapboxgl.LngLatBounds(
+            coordinates[0],
+            coordinates[0]
+          );
+          for (const coord of coordinates) {
+            bounds.extend(coord);
+          }
+          let center = bounds;
+          this.popup
+            .setLngLat(center.getCenter())
+            .setHTML(features[0].properties.parcel_id)
+            .addTo(this.map);
+    }
   },
+
   watch: {
     coordinates: {
       deep: true,
