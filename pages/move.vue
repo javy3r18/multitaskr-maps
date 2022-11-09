@@ -133,9 +133,11 @@
                   min="0"
                   max="360"
                 ></b-form-input>
-                <b-form-input v-model="rotation" style="width: 25%"
-                  >a</b-form-input
-                >
+                <p>Degrees:</p>
+                <b-form-input
+                  v-model="rotation"
+                  style="width: 25%"
+                ></b-form-input>
               </b-container>
               <hr />
               <b-container v-b-toggle.collapse-1>
@@ -218,6 +220,7 @@ export default {
       currentModel: null,
       showMap: false,
       parcelFeatures: null,
+      buildingFeatures: null,
       parcelId: null,
       aduExist: false,
       firstPolygon: null,
@@ -341,11 +344,10 @@ export default {
 
     getParcelFeatures() {
       this.map.once("idle", () => {
-        let content = this.map.queryRenderedFeatures(this.marker._pos, {
+        let parcel = this.map.queryRenderedFeatures(this.marker._pos, {
           layers: ["citysandiego"],
         });
-        console.log(content);
-        this.parcelFeatures = content[0];
+        this.parcelFeatures = parcel[0];
         this.selectedParcel();
         this.marker.remove();
         this.showMap = true;
@@ -378,6 +380,30 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
+
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      var bbox = this.$turf.bbox(poly);
+      console.log(bbox);
+      var cellSide = 5;
+      var options = { units: "meters" };
+      var grid = this.$turf.pointGrid(bbox, cellSide, options);
+      console.log(grid);
+      for(let i = 0; i<grid.features.length;i++){
+        let coordinates = grid.features[i].geometry.coordinates;
+        this.marker = new this.$mapboxgl.Marker({
+        color: "black",
+      })
+      .setLngLat(coordinates)
+      .addTo(this.map);
+      this.buildingFeatures = this.map.queryRenderedFeatures(this.marker._pos, {
+          layers: ["building-extrusion"],
+        });
+        this.marker.remove()
+        if(this.buildingFeatures.length > 0){
+          i = grid.features.length
+          console.log(this.buildingFeatures);
+        }
+      }
 
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
@@ -536,7 +562,7 @@ export default {
         type: "fill",
         source: "floor",
         paint: {
-          "fill-color": "blue",
+          "fill-color": "yellow",
         },
         layout: {},
       });
@@ -697,12 +723,16 @@ export default {
     },
 
     rotation: function (value) {
-      let degrees = +value
+      let degrees = +value;
       var center = this.$turf.centroid(this.firstPolygon);
       var options = {
         pivot: [center.geometry.coordinates[0], center.geometry.coordinates[1]],
       };
-      let rotatedPoly = this.$turf.transformRotate(this.firstPolygon, degrees, options);
+      let rotatedPoly = this.$turf.transformRotate(
+        this.firstPolygon,
+        degrees,
+        options
+      );
       this.map.getSource("floor").setData(rotatedPoly);
     },
 
