@@ -118,8 +118,24 @@
             <hr />
             <div class="collapsable-text">
               <b-container v-b-toggle.collapse-1>
-                <b-button @click="add3DModel">Set ADU</b-button>
-                <b-button @click="moveAdu">Move ADU</b-button>
+                <b-button :disabled="aduExist" @click="addFloor"
+                  >Set ADU</b-button
+                >
+                <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
+              </b-container>
+              <hr />
+              <b-container v-if="aduExist" v-b-toggle.collapse-1>
+                <p>Rotate</p>
+                <b-form-input
+                  id="range"
+                  v-model="rotation"
+                  type="range"
+                  min="0"
+                  max="360"
+                ></b-form-input>
+                <b-form-input v-model="rotation" style="width: 25%"
+                  >a</b-form-input
+                >
               </b-container>
               <hr />
               <b-container v-b-toggle.collapse-1>
@@ -203,6 +219,10 @@ export default {
       showMap: false,
       parcelFeatures: null,
       parcelId: null,
+      aduExist: false,
+      firstPolygon: null,
+      newPolyPosition: null,
+      rotation: 0,
     };
   },
 
@@ -241,7 +261,6 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
-        // this.moveModel();
 
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
@@ -311,58 +330,6 @@ export default {
           this.hoveredStateId = null;
         });
       });
-    },
-
-    moveModel() {
-      let poly = [
-        [-117.04032221565436, 32.56788775850487],
-        [-117.04047227600599, 32.56772503030933],
-        [-117.04145086617561, 32.562454274516284],
-        [-117.03323380160447, 32.562619119624316],
-        [-117.028235431521, 32.56763679941878],
-      ];
-
-      this.map.addSource("floor", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            coordinates: [poly],
-          },
-        },
-      });
-      this.map.addLayer({
-        id: "floorLayer",
-        generateId: true,
-        source: "floor",
-        type: "fill",
-        paint: {
-          "fill-color": "#4D04AE",
-          "fill-outline-color": "rgba(66,100,251, 1)",
-        },
-      });
-
-      var polys = this.$turf.polygon([
-        poly
-      ]);
-
-      //calculates the centroid of the polygon
-      var center = this.$turf.centroid(polys);
-
-      var from = this.$turf.point([
-        center.geometry.coordinates[0],
-        center.geometry.coordinates[1],
-      ]);
-
-      var to = this.$turf.point([-117.028235431521, 32.56763679941878]);
-
-      var bearing = this.$turf.rhumbBearing(from, to);
-
-      //calculates the distance between the points
-      var distance = this.$turf.rhumbDistance(from, to);
-
-      var translatedPoly = turf.transformTranslate(polys, distance, bearing);
     },
 
     setAutoFill() {
@@ -530,54 +497,131 @@ export default {
       });
     },
 
-    add3DModel() {
-      if (this.map.getLayer("custom_layer")) {
-        this.map.removeLayer("custom_layer");
-      }
-      let coord = this.coordinates;
+    addFloor() {
+      var poly = this.$turf.polygon([
+        [
+          [-117.95821415176962, 33.705383258258834],
+          [-117.95821415176962, 33.70535080831482],
+          [-117.95815174069097, 33.70535080831482],
+          [-117.95815174069097, 33.705383258258834],
+          [-117.95821415176962, 33.705383258258834],
+        ],
+      ]);
+
+      var center = this.$turf.centroid(poly);
+
+      var from = this.$turf.point([
+        center.geometry.coordinates[0],
+        center.geometry.coordinates[1],
+      ]);
+
+      var to = this.$turf.point([this.coordinates.lng, this.coordinates.lat]);
+
+      var bearing = this.$turf.rhumbBearing(from, to);
+
+      var distance = this.$turf.rhumbDistance(from, to);
+
+      this.firstPolygon = this.$turf.transformTranslate(
+        poly,
+        distance,
+        bearing
+      );
+
+      this.map.addSource("floor", {
+        type: "geojson",
+        data: this.firstPolygon,
+      });
       this.map.addLayer({
-        id: "custom_layer",
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: (map, gl) => {
-          window.tb = new Threebox(map, gl, {
-            defaultLights: true,
-            enableSelectingObjects: true,
-            enableDraggingObjects: true,
-            enableRotatingObjects: true,
-            enableTooltips: true,
-          });
-          let options = {
-            obj: "./model/example.fbx",
-            type: "fbx",
-            scale: 0.03,
-            units: "meters",
-            rotation: { x: 90, y: 0, z: 0 }, //default rotation
-          };
-          tb.loadObj(options, (model) => {
-            this.currentModel = model;
-            console.log(model);
-            let adu = this.currentModel.setCoords([coord.lng, coord.lat]);
-            tb.add(adu);
-          });
+        id: "floorLayer",
+        type: "fill",
+        source: "floor",
+        paint: {
+          "fill-color": "blue",
         },
-        render: function (gl, matrix) {
-          tb.update();
-        },
+        layout: {},
+      });
+
+      this.aduExist = true;
+
+      // if (this.map.getLayer("custom_layer")) {
+      //   this.map.removeLayer("custom_layer");
+      // }
+      // let coord = this.coordinates;
+      // this.map.addLayer({
+      //   id: "custom_layer",
+      //   type: "custom",
+      //   renderingMode: "3d",
+      //   onAdd: (map, gl) => {
+      //     window.tb = new Threebox(map, gl, {
+      //       defaultLights: true,
+      //       enableSelectingObjects: true,
+      //       enableDraggingObjects: true,
+      //       enableRotatingObjects: true,
+      //       enableTooltips: true,
+      //     });
+      //     let options = {
+      //       obj: "./model/example.fbx",
+      //       type: "fbx",
+      //       scale: 0.03,
+      //       units: "meters",
+      //       rotation: { x: 90, y: 0, z: 0 }, //default rotation
+      //     };
+      //     tb.loadObj(options, (model) => {
+      //       this.currentModel = model;
+      //       console.log(model);
+      //       let adu = this.currentModel.setCoords([coord.lng, coord.lat]);
+      //       tb.add(adu);
+      //     });
+      //   },
+      //   render: function (gl, matrix) {
+      //     tb.update();
+      //   },
+      // });
+    },
+
+    moveFloor() {
+      let stop = true;
+      this.map.on("mousemove", "polygon", (e) => {
+        if (stop) {
+          var center = this.$turf.centroid(this.firstPolygon);
+
+          var from = this.$turf.point([
+            center.geometry.coordinates[0],
+            center.geometry.coordinates[1],
+          ]);
+
+          var to = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
+
+          var bearing = this.$turf.rhumbBearing(from, to);
+
+          var distance = this.$turf.rhumbDistance(from, to);
+
+          this.firstPolygon = this.$turf.transformTranslate(
+            this.firstPolygon,
+            distance,
+            bearing
+          );
+
+          this.map.getSource("floor").setData(this.firstPolygon);
+        }
+      });
+
+      this.map.on("click", () => {
+        stop = false;
       });
     },
 
-    moveAdu() {
-      let a = true;
-      this.map.on("mousemove", "polygon", (e) => {
-        if (a) {
-          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
-        }
-      });
-      this.map.on("click", () => {
-        a = false;
-      });
-    },
+    // moveAdu() {
+    //   let a = true;
+    //   this.map.on("mousemove", "polygon", (e) => {
+    //     if (a) {
+    //       this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
+    //     }
+    //   });
+    //   this.map.on("click", () => {
+    //     a = false;
+    //   });
+    // },
 
     initMarker() {
       this.marker = new this.$mapboxgl.Marker({
@@ -633,21 +677,15 @@ export default {
       this.map.zoomOut();
     },
 
-    showPopup(features){
-      let coordinates = features[0].geometry.coordinates[0]
-      const bounds = new this.$mapboxgl.LngLatBounds(
-            coordinates[0],
-            coordinates[0]
-          );
-          for (const coord of coordinates) {
-            bounds.extend(coord);
-          }
-          let center = bounds;
-          this.popup
-            .setLngLat(center.getCenter())
-            .setHTML(features[0].properties.parcel_id)
-            .addTo(this.map);
-    }
+    showPopup(features) {
+      let coordinates = features[0].geometry.coordinates[0];
+      let turfPolygon = this.$turf.polygon([coordinates]);
+      var centroid = this.$turf.centroid(turfPolygon);
+      this.popup
+        .setLngLat(centroid.geometry.coordinates)
+        .setHTML(features[0].properties.parcel_id)
+        .addTo(this.map);
+    },
   },
 
   watch: {
@@ -657,6 +695,17 @@ export default {
         this.getAddress();
       },
     },
+
+    rotation: function (value) {
+      let degrees = +value
+      var center = this.$turf.centroid(this.firstPolygon);
+      var options = {
+        pivot: [center.geometry.coordinates[0], center.geometry.coordinates[1]],
+      };
+      let rotatedPoly = this.$turf.transformRotate(this.firstPolygon, degrees, options);
+      this.map.getSource("floor").setData(rotatedPoly);
+    },
+
     search: {
       deep: true,
       handler(value, old) {
@@ -697,7 +746,7 @@ export default {
 
 <style>
 body {
-  overflow: hidden;
+  overflow-x: hidden;
 }
 #map {
   width: 100%;
