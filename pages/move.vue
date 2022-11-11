@@ -44,7 +44,7 @@
         </b-col>
       </b-row>
       <b-row>
-        <b-col cols="3">
+        <b-col class="sideDiv" cols="3">
           <div class="m-3">
             <hr />
             <div>
@@ -376,7 +376,6 @@ export default {
          this.marker.remove()
         if (this.buildingFeatures.length > 0) {
           i = grid.features.length
-          console.log(this.buildingFeatures);
           // this.buildingFeatures[0].geometry.coordinates[0].forEach(
           //   (element) => {
           //     this.marker = new this.$mapboxgl.Marker({
@@ -583,24 +582,12 @@ export default {
         type: "fill",
         source: "floor",
         paint: {
-          "fill-color": "green",
+          "fill-color": "grey",
         },
         layout: {},
       });
       this.aduExist = true;
-      console.log(this.firstPolygon);
-      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
-      let poly2 = this.$turf.polygon([this.firstPolygon.geometry.coordinates[0]])
-      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
-      let intersection = this.$turf.intersect(poly1, poly2);
-      let difference = this.$turf.difference(poly2, poly3);
-      console.log(intersection);
-      console.log(difference);
-      if(intersection != null || difference != null){
-        console.log('wrong');
-      }else{
-        console.log('right');
-      }
+      this.verifyAduSpace();
     },
 
     moveFloor() {
@@ -630,10 +617,23 @@ export default {
         }
       });
 
-      this.map.on("click", () => {
+      this.map.once("click", () => {
         stop = false;
-
+        this.verifyAduSpace();
       });
+    },
+
+    verifyAduSpace(){
+      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
+      let poly2 = this.$turf.polygon([this.firstPolygon.geometry.coordinates[0]])
+      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
+      let intersection = this.$turf.intersect(poly1, poly2);
+      let difference = this.$turf.difference(poly2, poly3);
+      if(intersection != null || difference != null){
+        this.map.setPaintProperty('floorLayer', 'fill-color', 'red');
+      }else{
+        this.map.setPaintProperty('floorLayer', 'fill-color', 'green');
+      }
     },
 
     initMarker() {
@@ -721,6 +721,16 @@ export default {
         options
       );
       this.map.getSource("floor").setData(rotatedPoly);
+      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
+      let poly2 = this.$turf.polygon([rotatedPoly.geometry.coordinates[0]])
+      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
+      let intersection = this.$turf.intersect(poly1, poly2);
+      let difference = this.$turf.difference(poly2, poly3);
+      if(intersection != null || difference != null){
+        this.map.setPaintProperty('floorLayer', 'fill-color', 'red');
+      }else{
+        this.map.setPaintProperty('floorLayer', 'fill-color', 'green');
+      }
     },
 
     search: {
@@ -769,6 +779,11 @@ body {
   width: 100%;
   height: 100vh;
 }
+
+.sideDiv{
+overflow-y: scroll;
+}
+
 .multitaskr {
   background-color: #4e0eaf;
 }
