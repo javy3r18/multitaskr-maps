@@ -118,9 +118,7 @@
             <hr />
             <div class="collapsable-text">
               <b-container v-b-toggle.collapse-1>
-                <b-button :disabled="aduExist" @click="addFloor"
-                  >Set ADU</b-button
-                >
+                <b-button @click="addFloor">Set ADU</b-button>
                 <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
               </b-container>
               <hr />
@@ -348,10 +346,49 @@ export default {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
-        this.selectedParcel();
         this.marker.remove();
+        this.selectedParcel();
         this.showMap = true;
       });
+    },
+
+    getBuildingFeatures(parcelCoordinates){
+      let pitch = this.map.getPitch();
+      this.map.setPitch(0);
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      var bbox = this.$turf.bbox(poly);
+      var cellSide = 5;
+      var options = { units: "meters" };
+      var grid = this.$turf.pointGrid(bbox, cellSide, options);
+      for (let i = 0; i < grid.features.length; i++) {
+        let coordinates = grid.features[i].geometry.coordinates;
+        this.marker = new this.$mapboxgl.Marker({
+          color: "green",
+        })
+          .setLngLat(coordinates)
+          .addTo(this.map);
+        this.buildingFeatures = this.map.queryRenderedFeatures(
+          this.marker._pos,
+          {
+            layers: ["building-extrusion"],
+          }
+        );
+         this.marker.remove()
+        if (this.buildingFeatures.length > 0) {
+          i = grid.features.length
+          console.log(this.buildingFeatures);
+          // this.buildingFeatures[0].geometry.coordinates[0].forEach(
+          //   (element) => {
+          //     this.marker = new this.$mapboxgl.Marker({
+          //       color: "red",
+          //     })
+          //       .setLngLat(element)
+          //       .addTo(this.map);
+          //   }
+          // );
+        }
+      }
+      this.map.setPitch(pitch)
     },
 
     selectedParcel() {
@@ -380,31 +417,7 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-
-      let poly = this.$turf.polygon([parcelCoordinates]);
-      var bbox = this.$turf.bbox(poly);
-      console.log(bbox);
-      var cellSide = 5;
-      var options = { units: "meters" };
-      var grid = this.$turf.pointGrid(bbox, cellSide, options);
-      console.log(grid);
-      for(let i = 0; i<grid.features.length;i++){
-        let coordinates = grid.features[i].geometry.coordinates;
-        this.marker = new this.$mapboxgl.Marker({
-        color: "black",
-      })
-      .setLngLat(coordinates)
-      .addTo(this.map);
-      this.buildingFeatures = this.map.queryRenderedFeatures(this.marker._pos, {
-          layers: ["building-extrusion"],
-        });
-        this.marker.remove()
-        if(this.buildingFeatures.length > 0){
-          i = grid.features.length
-          console.log(this.buildingFeatures);
-        }
-      }
-
+      
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
@@ -414,10 +427,14 @@ export default {
       for (const coord of parcelCoordinates) {
         bounds.extend(coord);
       }
+
+      this.getBuildingFeatures(parcelCoordinates);
+
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 19,
       });
+      
     },
 
     onAddressChange() {
@@ -524,6 +541,10 @@ export default {
     },
 
     addFloor() {
+      if (this.map.getSource("floor")) {
+        this.map.removeLayer("floorLayer");
+        this.map.removeSource("floor");
+      }
       var poly = this.$turf.polygon([
         [
           [-117.95821415176962, 33.705383258258834],
@@ -562,47 +583,24 @@ export default {
         type: "fill",
         source: "floor",
         paint: {
-          "fill-color": "yellow",
+          "fill-color": "green",
         },
         layout: {},
       });
-
       this.aduExist = true;
-
-      // if (this.map.getLayer("custom_layer")) {
-      //   this.map.removeLayer("custom_layer");
-      // }
-      // let coord = this.coordinates;
-      // this.map.addLayer({
-      //   id: "custom_layer",
-      //   type: "custom",
-      //   renderingMode: "3d",
-      //   onAdd: (map, gl) => {
-      //     window.tb = new Threebox(map, gl, {
-      //       defaultLights: true,
-      //       enableSelectingObjects: true,
-      //       enableDraggingObjects: true,
-      //       enableRotatingObjects: true,
-      //       enableTooltips: true,
-      //     });
-      //     let options = {
-      //       obj: "./model/example.fbx",
-      //       type: "fbx",
-      //       scale: 0.03,
-      //       units: "meters",
-      //       rotation: { x: 90, y: 0, z: 0 }, //default rotation
-      //     };
-      //     tb.loadObj(options, (model) => {
-      //       this.currentModel = model;
-      //       console.log(model);
-      //       let adu = this.currentModel.setCoords([coord.lng, coord.lat]);
-      //       tb.add(adu);
-      //     });
-      //   },
-      //   render: function (gl, matrix) {
-      //     tb.update();
-      //   },
-      // });
+      console.log(this.firstPolygon);
+      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
+      let poly2 = this.$turf.polygon([this.firstPolygon.geometry.coordinates[0]])
+      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
+      let intersection = this.$turf.intersect(poly1, poly2);
+      let difference = this.$turf.difference(poly2, poly3);
+      console.log(intersection);
+      console.log(difference);
+      if(intersection != null || difference != null){
+        console.log('wrong');
+      }else{
+        console.log('right');
+      }
     },
 
     moveFloor() {
@@ -634,20 +632,9 @@ export default {
 
       this.map.on("click", () => {
         stop = false;
+
       });
     },
-
-    // moveAdu() {
-    //   let a = true;
-    //   this.map.on("mousemove", "polygon", (e) => {
-    //     if (a) {
-    //       this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
-    //     }
-    //   });
-    //   this.map.on("click", () => {
-    //     a = false;
-    //   });
-    // },
 
     initMarker() {
       this.marker = new this.$mapboxgl.Marker({
