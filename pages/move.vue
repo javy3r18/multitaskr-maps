@@ -163,6 +163,10 @@
         </b-col>
         <b-col cols="9">
           <div id="map"></div>
+          <div v-if="aduExist">
+            <b-alert v-if="aduStatePosition" class="alert" show variant="success">Well done Peter, I couldn't do it without you</b-alert>
+            <b-alert v-if="!aduStatePosition" class="alert" show variant="danger">Can't build the ADU here. Feasibility problem.</b-alert>
+          </div>
           <div class="BoundIcon">
             <div
               title="Reset parcel view"
@@ -219,11 +223,13 @@ export default {
       showMap: false,
       parcelFeatures: null,
       buildingFeatures: null,
+      filterBuildingFeatures: [],
       parcelId: null,
       aduExist: false,
       firstPolygon: null,
       newPolyPosition: null,
       rotation: 0,
+      aduStatePosition: false,
     };
   },
 
@@ -352,7 +358,8 @@ export default {
       });
     },
 
-    getBuildingFeatures(parcelCoordinates){
+    getBuildingFeatures(parcelCoordinates) {
+      this.filterBuildingFeatures = [];
       let pitch = this.map.getPitch();
       this.map.setPitch(0);
       let poly = this.$turf.polygon([parcelCoordinates]);
@@ -360,6 +367,7 @@ export default {
       var cellSide = 5;
       var options = { units: "meters" };
       var grid = this.$turf.pointGrid(bbox, cellSide, options);
+      let buildingId = [];
       for (let i = 0; i < grid.features.length; i++) {
         let coordinates = grid.features[i].geometry.coordinates;
         this.marker = new this.$mapboxgl.Marker({
@@ -373,13 +381,19 @@ export default {
             layers: ["building-extrusion"],
           }
         );
-         this.marker.remove()
-        if (this.buildingFeatures.length > 0) {
-          i = grid.features.length
+
+        this.marker.remove();
+        if (
+          this.buildingFeatures.length > 0 &&
+          !buildingId.includes(this.buildingFeatures[0].id)
+        ) {
+          buildingId.push(this.buildingFeatures[0].id);
+          this.filterBuildingFeatures.push(this.buildingFeatures);
           // this.buildingFeatures[0].geometry.coordinates[0].forEach(
           //   (element) => {
           //     this.marker = new this.$mapboxgl.Marker({
           //       color: "red",
+          //       draggable: true
           //     })
           //       .setLngLat(element)
           //       .addTo(this.map);
@@ -387,7 +401,7 @@ export default {
           // );
         }
       }
-      this.map.setPitch(pitch)
+      this.map.setPitch(pitch);
     },
 
     selectedParcel() {
@@ -416,7 +430,7 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-      
+
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
@@ -433,7 +447,6 @@ export default {
         padding: 20,
         zoom: 19,
       });
-      
     },
 
     onAddressChange() {
@@ -543,19 +556,20 @@ export default {
       if (this.map.getSource("floor")) {
         this.map.removeLayer("floorLayer");
         this.map.removeSource("floor");
+        this.map.removeLayer('custom_layer')
       }
       var poly = this.$turf.polygon([
         [
-          [-117.95821415176962, 33.705383258258834],
-          [-117.95821415176962, 33.70535080831482],
-          [-117.95815174069097, 33.70535080831482],
-          [-117.95815174069097, 33.705383258258834],
-          [-117.95821415176962, 33.705383258258834],
+          [-117.04397491402744, 32.54900563224241],
+          [-117.04397491402744, 32.5489504192723],
+          [-117.04390584476576, 32.5489504192723],
+          [-117.04390584476576, 32.54900563224241],
+          [-117.04397491402744, 32.54900563224241],
         ],
       ]);
 
       var center = this.$turf.centroid(poly);
-
+      console.log(center);
       var from = this.$turf.point([
         center.geometry.coordinates[0],
         center.geometry.coordinates[1],
@@ -586,6 +600,32 @@ export default {
         },
         layout: {},
       });
+
+      this.map.addLayer({
+        id: "custom_layer",
+        type: "custom",
+        renderingMode: "3d",
+        onAdd: (map, gl) => {
+          window.tb = new Threebox(map, gl, { defaultLights: true });
+          let options = {
+            obj: "./model/example.fbx",
+            type: "fbx",
+            scale: 0.02,
+            units: "meters",
+            anchor: "center",
+            rotation: { x: 90, y: 0, z: 0 }, //default rotation
+          };
+          tb.loadObj(options, (model) => {
+            this.currentModel = model;
+            console.log(model);
+            let adu = this.currentModel.setCoords(to.geometry.coordinates);
+            tb.add(adu);
+          });
+        },
+        render: function (gl, matrix) {
+          tb.update();
+        },
+      });
       this.aduExist = true;
       this.verifyAduSpace();
     },
@@ -614,6 +654,7 @@ export default {
           );
 
           this.map.getSource("floor").setData(this.firstPolygon);
+          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
         }
       });
 
@@ -623,17 +664,30 @@ export default {
       });
     },
 
-    verifyAduSpace(){
-      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
-      let poly2 = this.$turf.polygon([this.firstPolygon.geometry.coordinates[0]])
-      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
-      let intersection = this.$turf.intersect(poly1, poly2);
+    verifyAduSpace() {
+      let poly2 = this.$turf.polygon([
+        this.firstPolygon.geometry.coordinates[0],
+      ]);
+      let poly3 = this.$turf.polygon([
+        this.parcelFeatures.geometry.coordinates[0],
+      ]);
       let difference = this.$turf.difference(poly2, poly3);
-      if(intersection != null || difference != null){
-        this.map.setPaintProperty('floorLayer', 'fill-color', 'red');
-      }else{
-        this.map.setPaintProperty('floorLayer', 'fill-color', 'green');
-      }
+      let finishLoop = false;
+      this.filterBuildingFeatures.forEach((element) => {
+        if (!finishLoop) {
+          let poly = this.$turf.polygon([element[0].geometry.coordinates[0]]);
+          let intersection = this.$turf.intersect(poly, poly2);
+          if (intersection != null || difference != null) {
+            this.map.setPaintProperty("floorLayer", "fill-color", "red");
+            this.aduStatePosition = false
+            finishLoop = true;
+            return;
+          } else {
+            this.map.setPaintProperty("floorLayer", "fill-color", "green");
+            this.aduStatePosition = true
+          }
+        }
+      });
     },
 
     initMarker() {
@@ -721,16 +775,28 @@ export default {
         options
       );
       this.map.getSource("floor").setData(rotatedPoly);
-      let poly1 = this.$turf.polygon([this.buildingFeatures[0].geometry.coordinates[0]])
-      let poly2 = this.$turf.polygon([rotatedPoly.geometry.coordinates[0]])
-      let poly3 = this.$turf.polygon([this.parcelFeatures.geometry.coordinates[0]])
-      let intersection = this.$turf.intersect(poly1, poly2);
+      this.currentModel.setRotation(-degrees, 0, 0 );
+      let poly2 = this.$turf.polygon([rotatedPoly.geometry.coordinates[0]]);
+      let poly3 = this.$turf.polygon([
+        this.parcelFeatures.geometry.coordinates[0],
+      ]);
       let difference = this.$turf.difference(poly2, poly3);
-      if(intersection != null || difference != null){
-        this.map.setPaintProperty('floorLayer', 'fill-color', 'red');
-      }else{
-        this.map.setPaintProperty('floorLayer', 'fill-color', 'green');
-      }
+      let finishLoop = false;
+      this.filterBuildingFeatures.forEach((element) => {
+        if (!finishLoop) {
+          let poly = this.$turf.polygon([element[0].geometry.coordinates[0]]);
+          let intersection = this.$turf.intersect(poly, poly2);
+          if (intersection != null || difference != null) {
+            this.map.setPaintProperty("floorLayer", "fill-color", "red");
+            this.aduStatePosition = false
+            finishLoop = true;
+            return;
+          } else {
+            this.map.setPaintProperty("floorLayer", "fill-color", "green");
+            this.aduStatePosition = true
+          }
+        }
+      });
     },
 
     search: {
@@ -780,8 +846,13 @@ body {
   height: 100vh;
 }
 
-.sideDiv{
-overflow-y: scroll;
+.sideDiv {
+  overflow-y: scroll;
+}
+
+.alert{
+  position: absolute;
+  top: 10px;
 }
 
 .multitaskr {
