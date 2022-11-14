@@ -110,34 +110,9 @@
                       </p>
                     </b-col>
                   </b-row>
-                </div>
-              </b-tab>
-              <b-tab title="Projects"><p>I'm the second tab</p></b-tab>
-              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
-            </b-tabs>
-            <hr />
+                  <div>
+                    <hr />
             <div class="collapsable-text">
-              <b-container v-b-toggle.collapse-1>
-                <b-button @click="addFloor">Set ADU</b-button>
-                <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
-              </b-container>
-              <hr />
-              <b-container v-if="aduExist" v-b-toggle.collapse-1>
-                <p>Rotate</p>
-                <b-form-input
-                  id="range"
-                  v-model="rotation"
-                  type="range"
-                  min="0"
-                  max="360"
-                ></b-form-input>
-                <p>Degrees:</p>
-                <b-form-input
-                  v-model="rotation"
-                  style="width: 25%"
-                ></b-form-input>
-              </b-container>
-              <hr />
               <b-container v-b-toggle.collapse-1>
                 <span>Assesed Values</span>
                 <b-icon id="toggleicon" icon="chevron-down"></b-icon>
@@ -159,6 +134,37 @@
               </b-container>
             </div>
             <hr />
+                  </div>
+                </div>
+              </b-tab>
+              <b-tab title="ADU">
+                <div>
+              <b-container v-b-toggle.collapse-1>
+                <b-button @click="addFloor">Set ADU</b-button>
+                <b-button v-if="aduExist" @click="add3DModel">3D view</b-button>
+                <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
+              </b-container>
+              <hr />
+              <b-container v-if="aduExist" v-b-toggle.collapse-1>
+                <p>Rotate</p>
+                <b-form-input
+                  id="range"
+                  v-model="rotation"
+                  type="range"
+                  min="0"
+                  max="360"
+                ></b-form-input>
+                <p>Degrees:</p>
+                <b-form-input
+                  v-model="rotation"
+                  style="width: 25%"
+                ></b-form-input>
+              </b-container>
+              <hr />
+                </div>
+              </b-tab>
+              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
+            </b-tabs>
           </div>
         </b-col>
         <b-col cols="9">
@@ -227,9 +233,11 @@ export default {
       parcelId: null,
       aduExist: false,
       firstPolygon: null,
-      newPolyPosition: null,
+      newPolyCenter: null,
       rotation: 0,
       aduStatePosition: false,
+      is3D: null,
+      switch3D: true,
     };
   },
 
@@ -569,17 +577,16 @@ export default {
       ]);
 
       var center = this.$turf.centroid(poly);
-      console.log(center);
       var from = this.$turf.point([
         center.geometry.coordinates[0],
         center.geometry.coordinates[1],
       ]);
 
-      var to = this.$turf.point([this.coordinates.lng, this.coordinates.lat]);
+      this.newPolyCenter = this.$turf.point([this.coordinates.lng, this.coordinates.lat]);
 
-      var bearing = this.$turf.rhumbBearing(from, to);
+      var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
 
-      var distance = this.$turf.rhumbDistance(from, to);
+      var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
 
       this.firstPolygon = this.$turf.transformTranslate(
         poly,
@@ -600,8 +607,16 @@ export default {
         },
         layout: {},
       });
+      this.aduExist = true;
+      this.verifyAduSpace(this.firstPolygon);
+    },
 
-      this.map.addLayer({
+    add3DModel(){
+      
+      if(this.switch3D){
+        this.switch3D = false
+        this.is3D = true
+        this.map.addLayer({
         id: "custom_layer",
         type: "custom",
         renderingMode: "3d",
@@ -617,17 +632,20 @@ export default {
           };
           tb.loadObj(options, (model) => {
             this.currentModel = model;
-            console.log(model);
-            let adu = this.currentModel.setCoords(to.geometry.coordinates);
+            let adu = this.currentModel.setCoords(this.newPolyCenter.geometry.coordinates);
             tb.add(adu);
+            console.log(tb);
           });
         },
         render: function (gl, matrix) {
           tb.update();
         },
       });
-      this.aduExist = true;
-      this.verifyAduSpace();
+      }else{
+        this.map.removeLayer('custom_layer')
+        this.is3D = false
+        this.switch3D = true
+      }
     },
 
     moveFloor() {
@@ -641,11 +659,11 @@ export default {
             center.geometry.coordinates[1],
           ]);
 
-          var to = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
+          this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
 
-          var bearing = this.$turf.rhumbBearing(from, to);
+          var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
 
-          var distance = this.$turf.rhumbDistance(from, to);
+          var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
 
           this.firstPolygon = this.$turf.transformTranslate(
             this.firstPolygon,
@@ -654,19 +672,19 @@ export default {
           );
 
           this.map.getSource("floor").setData(this.firstPolygon);
-          this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
+          if(this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat])
         }
       });
 
       this.map.once("click", () => {
         stop = false;
-        this.verifyAduSpace();
+        this.verifyAduSpace(this.firstPolygon);
       });
     },
 
-    verifyAduSpace() {
+    verifyAduSpace(currentPolygon) {
       let poly2 = this.$turf.polygon([
-        this.firstPolygon.geometry.coordinates[0],
+        currentPolygon.geometry.coordinates[0],
       ]);
       let poly3 = this.$turf.polygon([
         this.parcelFeatures.geometry.coordinates[0],
@@ -759,7 +777,7 @@ export default {
     coordinates: {
       deep: true,
       handler(value, old) {
-        this.getAddress();
+        // this.getAddress();
       },
     },
 
@@ -776,27 +794,7 @@ export default {
       );
       this.map.getSource("floor").setData(rotatedPoly);
       this.currentModel.setRotation(-degrees, 0, 0 );
-      let poly2 = this.$turf.polygon([rotatedPoly.geometry.coordinates[0]]);
-      let poly3 = this.$turf.polygon([
-        this.parcelFeatures.geometry.coordinates[0],
-      ]);
-      let difference = this.$turf.difference(poly2, poly3);
-      let finishLoop = false;
-      this.filterBuildingFeatures.forEach((element) => {
-        if (!finishLoop) {
-          let poly = this.$turf.polygon([element[0].geometry.coordinates[0]]);
-          let intersection = this.$turf.intersect(poly, poly2);
-          if (intersection != null || difference != null) {
-            this.map.setPaintProperty("floorLayer", "fill-color", "red");
-            this.aduStatePosition = false
-            finishLoop = true;
-            return;
-          } else {
-            this.map.setPaintProperty("floorLayer", "fill-color", "green");
-            this.aduStatePosition = true
-          }
-        }
-      });
+      this.verifyAduSpace(rotatedPoly)
     },
 
     search: {
