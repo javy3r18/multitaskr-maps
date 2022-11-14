@@ -284,11 +284,14 @@ export default {
 
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parcelLine", "building-extrusion");
+
+        
         this.map.on("mousemove", "citysandiego", (e) => {
-          this.map.getCanvas().style.cursor = "pointer";
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
+          let lockParcel = this.parcelFeatures.id          
+            this.map.getCanvas().style.cursor = "pointer";
           let id = content[0].id;
           if (this.mouseHover != id) {
             this.mouseHover = content[0].id;
@@ -564,8 +567,11 @@ export default {
       if (this.map.getSource("floor")) {
         this.map.removeLayer("floorLayer");
         this.map.removeSource("floor");
-        this.map.removeLayer('custom_layer')
+        
       }
+
+      if(this.map.getLayer('custom_layer')) this.map.removeLayer('custom_layer')
+
       var poly = this.$turf.polygon([
         [
           [-117.04397491402744, 32.54900563224241],
@@ -612,8 +618,8 @@ export default {
     },
 
     add3DModel(){
-      
       if(this.switch3D){
+        let r = this.rotation
         this.switch3D = false
         this.is3D = true
         this.map.addLayer({
@@ -628,14 +634,15 @@ export default {
             scale: 0.02,
             units: "meters",
             anchor: "center",
-            rotation: { x: 90, y: 0, z: 0 }, //default rotation
+            rotation: { x: 90, y: 0, z: 0}, //default rotation
           };
           tb.loadObj(options, (model) => {
             this.currentModel = model;
             let adu = this.currentModel.setCoords(this.newPolyCenter.geometry.coordinates);
             tb.add(adu);
-            console.log(tb);
+            console.log(this.currentModel);
           });
+          
         },
         render: function (gl, matrix) {
           tb.update();
@@ -646,6 +653,7 @@ export default {
         this.is3D = false
         this.switch3D = true
       }
+      
     },
 
     moveFloor() {
@@ -793,7 +801,8 @@ export default {
         options
       );
       this.map.getSource("floor").setData(rotatedPoly);
-      this.currentModel.setRotation(-degrees, 0, 0 );
+      if(this.is3D) this.currentModel.setRotation({x: 0, y: 0, z: -degrees});
+      
       this.verifyAduSpace(rotatedPoly)
     },
 
