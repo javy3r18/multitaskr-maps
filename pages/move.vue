@@ -112,55 +112,59 @@
                   </b-row>
                   <div>
                     <hr />
-            <div class="collapsable-text">
-              <b-container v-b-toggle.collapse-1>
-                <span>Assesed Values</span>
-                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-              </b-container>
-              <hr />
-              <b-container v-b-toggle.collapse-1>
-                <span>Property details</span>
-                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-              </b-container>
-              <hr />
-              <b-container v-b-toggle.collapse-1>
-                <span>Environmental Hazards & Concerns</span>
-                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-              </b-container>
-              <hr />
-              <b-container v-b-toggle.collapse-1>
-                <span>Zoning & General Plan</span>
-                <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-              </b-container>
-            </div>
-            <hr />
+                    <div class="collapsable-text">
+                      <b-container v-b-toggle.collapse-1>
+                        <span>Assesed Values</span>
+                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+                      </b-container>
+                      <hr />
+                      <b-container v-b-toggle.collapse-1>
+                        <span>Property details</span>
+                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+                      </b-container>
+                      <hr />
+                      <b-container v-b-toggle.collapse-1>
+                        <span>Environmental Hazards & Concerns</span>
+                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+                      </b-container>
+                      <hr />
+                      <b-container v-b-toggle.collapse-1>
+                        <span>Zoning & General Plan</span>
+                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
+                      </b-container>
+                    </div>
+                    <hr />
                   </div>
                 </div>
               </b-tab>
               <b-tab title="ADU">
                 <div>
-              <b-container v-b-toggle.collapse-1>
-                <b-button @click="addFloor">Set ADU</b-button>
-                <b-button v-if="aduExist" @click="add3DModel">3D view</b-button>
-                <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
-              </b-container>
-              <hr />
-              <b-container v-if="aduExist" v-b-toggle.collapse-1>
-                <p>Rotate</p>
-                <b-form-input
-                  id="range"
-                  v-model="rotation"
-                  type="range"
-                  min="0"
-                  max="360"
-                ></b-form-input>
-                <p>Degrees:</p>
-                <b-form-input
-                  v-model="rotation"
-                  style="width: 25%"
-                ></b-form-input>
-              </b-container>
-              <hr />
+                  <b-container v-b-toggle.collapse-1>
+                    <b-button @click="addFloor">Set ADU</b-button>
+                    <b-button v-if="aduExist" @click="add3DModel"
+                      >3D view</b-button
+                    >
+                    <b-button v-if="aduExist" @click="moveFloor"
+                      >Move ADU</b-button
+                    >
+                  </b-container>
+                  <hr />
+                  <b-container v-if="aduExist" v-b-toggle.collapse-1>
+                    <p>Rotate</p>
+                    <b-form-input
+                      id="range"
+                      v-model="rotation"
+                      type="range"
+                      min="0"
+                      max="360"
+                    ></b-form-input>
+                    <p>Degrees:</p>
+                    <b-form-input
+                      v-model="rotation"
+                      style="width: 25%"
+                    ></b-form-input>
+                  </b-container>
+                  <hr />
                 </div>
               </b-tab>
               <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
@@ -170,8 +174,20 @@
         <b-col cols="9">
           <div id="map"></div>
           <div v-if="aduExist">
-            <b-alert v-if="aduStatePosition" class="alert" show variant="success">Well done Peter, I couldn't do it without you</b-alert>
-            <b-alert v-if="!aduStatePosition" class="alert" show variant="danger">Can't build the ADU here. Feasibility problem.</b-alert>
+            <b-alert
+              v-if="aduStatePosition"
+              class="alert"
+              show
+              variant="success"
+              >Well done Peter, I couldn't do it without you</b-alert
+            >
+            <b-alert
+              v-if="!aduStatePosition"
+              class="alert"
+              show
+              variant="danger"
+              >Can't build the ADU here. Feasibility problem.</b-alert
+            >
           </div>
           <div class="BoundIcon">
             <div
@@ -262,7 +278,7 @@ export default {
         container: "map",
         style: "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o",
         zoom: 17,
-        pitch: 45, //inclination
+        pitch: 0, //inclination
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
         antialias: true,
@@ -285,13 +301,12 @@ export default {
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parcelLine", "building-extrusion");
 
-        
         this.map.on("mousemove", "citysandiego", (e) => {
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
-          let lockParcel = this.parcelFeatures.id          
-            this.map.getCanvas().style.cursor = "pointer";
+          let lockParcel = this.parcelFeatures.id;
+          this.map.getCanvas().style.cursor = "pointer";
           let id = content[0].id;
           if (this.mouseHover != id) {
             this.mouseHover = content[0].id;
@@ -363,6 +378,7 @@ export default {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
+        console.log(this.parcelFeatures);
         this.marker.remove();
         this.selectedParcel();
         this.showMap = true;
@@ -442,6 +458,38 @@ export default {
         },
       });
 
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      let bbox = this.$turf.bbox(poly);
+      console.log(bbox);
+      this.marker = new this.$mapboxgl.Marker({
+          color: "green",
+        })
+          .setLngLat([bbox[0],bbox[1]])
+          .addTo(this.map);
+          let a = this.marker._pos
+          this.marker = new this.$mapboxgl.Marker({
+          color: "green",
+        })
+          .setLngLat([bbox[2],bbox[3]])
+          .addTo(this.map);
+          let b = this.marker._pos
+          console.log(a);
+      let parcel = this.map.queryRenderedFeatures([a,b],{
+          layers: ["building-extrusion"],
+        });
+        parcel.forEach(element => {
+          element.geometry.coordinates[0].forEach(coord => {
+            this.marker = new this.$mapboxgl.Marker({
+          color: "red",
+        })
+          .setLngLat(coord)
+          .addTo(this.map);
+        });
+        });
+        console.log(parcel);
+        
+
+
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
@@ -452,7 +500,7 @@ export default {
         bounds.extend(coord);
       }
 
-      this.getBuildingFeatures(parcelCoordinates);
+      // this.getBuildingFeatures(parcelCoordinates);
 
       this.map.fitBounds(bounds, {
         padding: 20,
@@ -567,10 +615,10 @@ export default {
       if (this.map.getSource("floor")) {
         this.map.removeLayer("floorLayer");
         this.map.removeSource("floor");
-        
       }
 
-      if(this.map.getLayer('custom_layer')) this.map.removeLayer('custom_layer')
+      if (this.map.getLayer("custom_layer"))
+        this.map.removeLayer("custom_layer");
 
       var poly = this.$turf.polygon([
         [
@@ -588,7 +636,10 @@ export default {
         center.geometry.coordinates[1],
       ]);
 
-      this.newPolyCenter = this.$turf.point([this.coordinates.lng, this.coordinates.lat]);
+      this.newPolyCenter = this.$turf.point([
+        this.coordinates.lng,
+        this.coordinates.lat,
+      ]);
 
       var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
 
@@ -617,43 +668,43 @@ export default {
       this.verifyAduSpace(this.firstPolygon);
     },
 
-    add3DModel(){
-      if(this.switch3D){
-        let r = this.rotation
-        this.switch3D = false
-        this.is3D = true
+    add3DModel() {
+      if (this.switch3D) {
+        let r = this.rotation;
+        this.switch3D = false;
+        this.is3D = true;
         this.map.addLayer({
-        id: "custom_layer",
-        type: "custom",
-        renderingMode: "3d",
-        onAdd: (map, gl) => {
-          window.tb = new Threebox(map, gl, { defaultLights: true });
-          let options = {
-            obj: "./model/example.fbx",
-            type: "fbx",
-            scale: 0.02,
-            units: "meters",
-            anchor: "center",
-            rotation: { x: 90, y: 0, z: 0}, //default rotation
-          };
-          tb.loadObj(options, (model) => {
-            this.currentModel = model;
-            let adu = this.currentModel.setCoords(this.newPolyCenter.geometry.coordinates);
-            tb.add(adu);
-            console.log(this.currentModel);
-          });
-          
-        },
-        render: function (gl, matrix) {
-          tb.update();
-        },
-      });
-      }else{
-        this.map.removeLayer('custom_layer')
-        this.is3D = false
-        this.switch3D = true
+          id: "custom_layer",
+          type: "custom",
+          renderingMode: "3d",
+          onAdd: (map, gl) => {
+            window.tb = new Threebox(map, gl, { defaultLights: true });
+            let options = {
+              obj: "./model/example.fbx",
+              type: "fbx",
+              scale: 0.02,
+              units: "meters",
+              anchor: "center",
+              rotation: { x: 90, y: 0, z: 0 }, //default rotation
+            };
+            tb.loadObj(options, (model) => {
+              this.currentModel = model;
+              let adu = this.currentModel.setCoords(
+                this.newPolyCenter.geometry.coordinates
+              );
+              tb.add(adu);
+              console.log(this.currentModel);
+            });
+          },
+          render: function (gl, matrix) {
+            tb.update();
+          },
+        });
+      } else {
+        this.map.removeLayer("custom_layer");
+        this.is3D = false;
+        this.switch3D = true;
       }
-      
     },
 
     moveFloor() {
@@ -680,7 +731,8 @@ export default {
           );
 
           this.map.getSource("floor").setData(this.firstPolygon);
-          if(this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat])
+          if (this.is3D)
+            this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
         }
       });
 
@@ -691,9 +743,7 @@ export default {
     },
 
     verifyAduSpace(currentPolygon) {
-      let poly2 = this.$turf.polygon([
-        currentPolygon.geometry.coordinates[0],
-      ]);
+      let poly2 = this.$turf.polygon([currentPolygon.geometry.coordinates[0]]);
       let poly3 = this.$turf.polygon([
         this.parcelFeatures.geometry.coordinates[0],
       ]);
@@ -705,12 +755,12 @@ export default {
           let intersection = this.$turf.intersect(poly, poly2);
           if (intersection != null || difference != null) {
             this.map.setPaintProperty("floorLayer", "fill-color", "red");
-            this.aduStatePosition = false
+            this.aduStatePosition = false;
             finishLoop = true;
             return;
           } else {
             this.map.setPaintProperty("floorLayer", "fill-color", "green");
-            this.aduStatePosition = true
+            this.aduStatePosition = true;
           }
         }
       });
@@ -801,9 +851,9 @@ export default {
         options
       );
       this.map.getSource("floor").setData(rotatedPoly);
-      if(this.is3D) this.currentModel.setRotation({x: 0, y: 0, z: -degrees});
-      
-      this.verifyAduSpace(rotatedPoly)
+      if (this.is3D) this.currentModel.setRotation({ x: 0, y: 0, z: -degrees });
+
+      this.verifyAduSpace(rotatedPoly);
     },
 
     search: {
@@ -857,7 +907,7 @@ body {
   overflow-y: scroll;
 }
 
-.alert{
+.alert {
   position: absolute;
   top: 10px;
 }
