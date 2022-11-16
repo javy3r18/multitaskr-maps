@@ -256,21 +256,18 @@ export default {
       switch3D: true,
     };
   },
-
   computed: {
     ...mapGetters({
       items: "locations/items",
       polygons: "polygons/polygons",
     }),
   },
-
   mounted() {
     this.createMap();
     this.initMarker();
     this.isMapLoaded();
     this.setAutoFill();
   },
-
   methods: {
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
@@ -278,7 +275,7 @@ export default {
         container: "map",
         style: "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o",
         zoom: 17,
-        pitch: 0, //inclination
+        pitch: 45, //inclination
         bearing: -17, // rotation
         center: [-117.157268, 32.713888],
         antialias: true,
@@ -292,12 +289,10 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
-
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
         });
-
         this.map.moveLayer("citysandiego", "building-extrusion");
         this.map.moveLayer("parcelLine", "building-extrusion");
 
@@ -335,7 +330,6 @@ export default {
             }
           }
         });
-
         this.map.on("click", "citysandiego", (e) => {
           this.coordinates = e.lngLat;
           let content = this.map.queryRenderedFeatures(e.point, {
@@ -344,7 +338,6 @@ export default {
           this.parcelFeatures = content[0];
           this.selectedParcel();
         });
-
         this.map.on("mouseleave", "citysandiego", () => {
           this.params = null;
           this.map.getCanvas().style.cursor = "";
@@ -378,7 +371,6 @@ export default {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
-        console.log(this.parcelFeatures);
         this.marker.remove();
         this.selectedParcel();
         this.showMap = true;
@@ -391,41 +383,40 @@ export default {
       this.map.setPitch(0);
       let poly = this.$turf.polygon([parcelCoordinates]);
       var bbox = this.$turf.bbox(poly);
-      var cellSide = 5;
+      let sw = [bbox[0], bbox[1]];
+      let ne = [bbox[2], bbox[3]];
+
+      let swPoint = this.map.project(sw);
+      let nePoint = this.map.project(ne);
+
       var options = { units: "meters" };
-      var grid = this.$turf.pointGrid(bbox, cellSide, options);
+      var grid = this.$turf.pointGrid(bbox, 5, options);
       let buildingId = [];
       for (let i = 0; i < grid.features.length; i++) {
-        let coordinates = grid.features[i].geometry.coordinates;
-        this.marker = new this.$mapboxgl.Marker({
-          color: "green",
-        })
-          .setLngLat(coordinates)
-          .addTo(this.map);
+        console.log(i);
+        let point = this.map.project(grid.features[i].geometry.coordinates)
         this.buildingFeatures = this.map.queryRenderedFeatures(
-          this.marker._pos,
+          point,
           {
             layers: ["building-extrusion"],
           }
         );
-
-        this.marker.remove();
         if (
           this.buildingFeatures.length > 0 &&
           !buildingId.includes(this.buildingFeatures[0].id)
         ) {
           buildingId.push(this.buildingFeatures[0].id);
           this.filterBuildingFeatures.push(this.buildingFeatures);
-          // this.buildingFeatures[0].geometry.coordinates[0].forEach(
-          //   (element) => {
-          //     this.marker = new this.$mapboxgl.Marker({
-          //       color: "red",
-          //       draggable: true
-          //     })
-          //       .setLngLat(element)
-          //       .addTo(this.map);
-          //   }
-          // );
+          this.buildingFeatures[0].geometry.coordinates[0].forEach(
+            (element) => {
+              this.marker = new this.$mapboxgl.Marker({
+                color: "red",
+                draggable: true
+              })
+                .setLngLat(element)
+                .addTo(this.map);
+            }
+          );
         }
       }
       this.map.setPitch(pitch);
@@ -457,39 +448,6 @@ export default {
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
       });
-
-      let poly = this.$turf.polygon([parcelCoordinates]);
-      let bbox = this.$turf.bbox(poly);
-      console.log(bbox);
-      this.marker = new this.$mapboxgl.Marker({
-          color: "green",
-        })
-          .setLngLat([bbox[0],bbox[1]])
-          .addTo(this.map);
-          let a = this.marker._pos
-          this.marker = new this.$mapboxgl.Marker({
-          color: "green",
-        })
-          .setLngLat([bbox[2],bbox[3]])
-          .addTo(this.map);
-          let b = this.marker._pos
-          console.log(a);
-      let parcel = this.map.queryRenderedFeatures([a,b],{
-          layers: ["building-extrusion"],
-        });
-        parcel.forEach(element => {
-          element.geometry.coordinates[0].forEach(coord => {
-            this.marker = new this.$mapboxgl.Marker({
-          color: "red",
-        })
-          .setLngLat(coord)
-          .addTo(this.map);
-        });
-        });
-        console.log(parcel);
-        
-
-
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
       const bounds = new this.$mapboxgl.LngLatBounds(
@@ -499,9 +457,7 @@ export default {
       for (const coord of parcelCoordinates) {
         bounds.extend(coord);
       }
-
-      // this.getBuildingFeatures(parcelCoordinates);
-
+      this.getBuildingFeatures(parcelCoordinates);
       this.map.fitBounds(bounds, {
         padding: 20,
         zoom: 19,
@@ -529,7 +485,6 @@ export default {
         chulaVistaTileset: ["chulavistazoning", "chulaVistaLine", 13, 16.5],
         sanDiegoTileset: ["city_sandiego_zoning", "sanDiegoLine", 13, 16.5],
       };
-
       for (const [key, value] of Object.entries(Sources)) {
         this.map.addSource(key, {
           type: "vector",
@@ -616,10 +571,8 @@ export default {
         this.map.removeLayer("floorLayer");
         this.map.removeSource("floor");
       }
-
       if (this.map.getLayer("custom_layer"))
         this.map.removeLayer("custom_layer");
-
       var poly = this.$turf.polygon([
         [
           [-117.04397491402744, 32.54900563224241],
@@ -629,28 +582,22 @@ export default {
           [-117.04397491402744, 32.54900563224241],
         ],
       ]);
-
       var center = this.$turf.centroid(poly);
       var from = this.$turf.point([
         center.geometry.coordinates[0],
         center.geometry.coordinates[1],
       ]);
-
       this.newPolyCenter = this.$turf.point([
         this.coordinates.lng,
         this.coordinates.lat,
       ]);
-
       var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
-
       var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
-
       this.firstPolygon = this.$turf.transformTranslate(
         poly,
         distance,
         bearing
       );
-
       this.map.addSource("floor", {
         type: "geojson",
         data: this.firstPolygon,
@@ -712,30 +659,23 @@ export default {
       this.map.on("mousemove", "polygon", (e) => {
         if (stop) {
           var center = this.$turf.centroid(this.firstPolygon);
-
           var from = this.$turf.point([
             center.geometry.coordinates[0],
             center.geometry.coordinates[1],
           ]);
-
           this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
-
           var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
-
           var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
-
           this.firstPolygon = this.$turf.transformTranslate(
             this.firstPolygon,
             distance,
             bearing
           );
-
           this.map.getSource("floor").setData(this.firstPolygon);
           if (this.is3D)
             this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
         }
       });
-
       this.map.once("click", () => {
         stop = false;
         this.verifyAduSpace(this.firstPolygon);
@@ -830,7 +770,6 @@ export default {
         .addTo(this.map);
     },
   },
-
   watch: {
     coordinates: {
       deep: true,
@@ -838,7 +777,6 @@ export default {
         // this.getAddress();
       },
     },
-
     rotation: function (value) {
       let degrees = +value;
       var center = this.$turf.centroid(this.firstPolygon);
@@ -855,7 +793,6 @@ export default {
 
       this.verifyAduSpace(rotatedPoly);
     },
-
     search: {
       deep: true,
       handler(value, old) {
@@ -902,16 +839,13 @@ body {
   width: 100%;
   height: 100vh;
 }
-
 .sideDiv {
   overflow-y: scroll;
 }
-
 .alert {
   position: absolute;
   top: 10px;
 }
-
 .multitaskr {
   background-color: #4e0eaf;
 }
@@ -963,7 +897,6 @@ body {
 #infoicon:hover {
   color: #4e0eaf;
 }
-
 .PlusMinusIcons {
   position: absolute;
   right: 0;
@@ -987,12 +920,10 @@ body {
   height: 40px;
   border-radius: 100%;
 }
-
 .location-icon {
   display: flex;
   justify-content: center;
 }
-
 .mapboxgl-popup {
   max-width: 400px;
   font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
