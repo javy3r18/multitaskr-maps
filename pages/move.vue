@@ -300,7 +300,6 @@ export default {
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
           });
-          let lockParcel = this.parcelFeatures.id;
           this.map.getCanvas().style.cursor = "pointer";
           let id = content[0].id;
           if (this.mouseHover != id) {
@@ -378,51 +377,39 @@ export default {
     },
 
     getBuildingFeatures(parcelCoordinates) {
-      this.filterBuildingFeatures = [];
-      let pitch = this.map.getPitch();
-      this.map.setPitch(0);
-      let poly = this.$turf.polygon([parcelCoordinates]);
-      var bbox = this.$turf.bbox(poly);
-      let sw = [bbox[0], bbox[1]];
-      let ne = [bbox[2], bbox[3]];
-
-      let swPoint = this.map.project(sw);
-      let nePoint = this.map.project(ne);
-
-      var options = { units: "meters" };
-      var grid = this.$turf.pointGrid(bbox, 5, options);
-      let buildingId = [];
-      for (let i = 0; i < grid.features.length; i++) {
-        console.log(i);
-        let point = this.map.project(grid.features[i].geometry.coordinates)
-        this.buildingFeatures = this.map.queryRenderedFeatures(
-          point,
-          {
-            layers: ["building-extrusion"],
-          }
-        );
-        if (
-          this.buildingFeatures.length > 0 &&
-          !buildingId.includes(this.buildingFeatures[0].id)
-        ) {
-          buildingId.push(this.buildingFeatures[0].id);
-          this.filterBuildingFeatures.push(this.buildingFeatures);
-          this.buildingFeatures[0].geometry.coordinates[0].forEach(
-            (element) => {
-              this.marker = new this.$mapboxgl.Marker({
-                color: "red",
-                draggable: true
-              })
-                .setLngLat(element)
-                .addTo(this.map);
-            }
-          );
+      let features = this.map.queryRenderedFeatures({layers: ['building-extrusion']});
+      let poly = this.$turf.polygon([parcelCoordinates])
+      this.filterBuildingFeatures = []
+      let buildingCoordinates = null
+      features.forEach(element => {
+        if(element.geometry.coordinates.length > 1){ //Se hace si el feature regresa un multipolygon
+          element.geometry.coordinates.forEach(subelement => {
+        buildingCoordinates = subelement 
+        let poly2 = this.$turf.polygon([buildingCoordinates[0]]) //Se guarda cada uno de los polygonos dentro del multipolygon
+        let intersection = this.$turf.intersect(poly, poly2);
+        if(intersection){
+        this.filterBuildingFeatures.push(intersection.geometry.coordinates)
         }
-      }
-      this.map.setPitch(pitch);
+          });
+        }else{
+          buildingCoordinates = element.geometry.coordinates
+        let poly2 = this.$turf.polygon([buildingCoordinates[0]])
+        let intersection = this.$turf.intersect(poly, poly2);
+        if(intersection && intersection.geometry.coordinates.length > 1){ //Se hace si el intersection regresa un multipolygon
+          intersection.geometry.coordinates.forEach(element => {
+            this.filterBuildingFeatures.push(element)
+          });
+        }else if(intersection){
+        this.filterBuildingFeatures.push(intersection.geometry.coordinates)
+        }
+        }
+      });
+      console.log(this.filterBuildingFeatures);
     },
 
     selectedParcel() {
+      let pitch = this.map.getPitch()
+      this.map.setPitch(pitch - 1)
       let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
       if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
@@ -450,18 +437,27 @@ export default {
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
-      const bounds = new this.$mapboxgl.LngLatBounds(
-        parcelCoordinates[0],
-        parcelCoordinates[0]
-      );
-      for (const coord of parcelCoordinates) {
-        bounds.extend(coord);
-      }
-      this.getBuildingFeatures(parcelCoordinates);
-      this.map.fitBounds(bounds, {
+      
+      let poly = this.$turf.polygon([parcelCoordinates])
+      let bbox = this.$turf.bbox(poly)
+      
+      this.map.fitBounds(bbox, {
         padding: 20,
-        zoom: 19,
+        pitch: 0,
       });
+
+      this.map.once('moveend', ()=>{
+        this.getBuildingFeatures(parcelCoordinates);
+        this.map.fitBounds(bbox, {
+        padding: 20,
+        zoom: 19.5,
+        pitch: 45,
+        duration: 2000
+      });
+      })
+
+      
+      
     },
 
     onAddressChange() {
@@ -641,6 +637,7 @@ export default {
               );
               tb.add(adu);
               console.log(this.currentModel);
+              this.currentModel.setRotation({ x: 0, y: 0, z: -this.rotation });
             });
           },
           render: function (gl, matrix) {
@@ -689,9 +686,10 @@ export default {
       ]);
       let difference = this.$turf.difference(poly2, poly3);
       let finishLoop = false;
+      
       this.filterBuildingFeatures.forEach((element) => {
         if (!finishLoop) {
-          let poly = this.$turf.polygon([element[0].geometry.coordinates[0]]);
+          let poly = this.$turf.polygon([element[0]]);
           let intersection = this.$turf.intersect(poly, poly2);
           if (intersection != null || difference != null) {
             this.map.setPaintProperty("floorLayer", "fill-color", "red");
