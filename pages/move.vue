@@ -254,6 +254,7 @@ export default {
       aduStatePosition: false,
       is3D: null,
       switch3D: true,
+      currentParcelId: null,
     };
   },
   computed: {
@@ -264,10 +265,10 @@ export default {
   },
   mounted() {
     this.createMap();
-    this.initMarker();
     this.isMapLoaded();
     this.setAutoFill();
   },
+
   methods: {
     createMap() {
       this.$mapboxgl.accessToken = this.access_token;
@@ -335,7 +336,10 @@ export default {
             layers: ["citysandiego"],
           });
           this.parcelFeatures = content[0];
-          this.selectedParcel();
+          if(this.currentParcelId != content[0].id){
+            this.currentParcelId = content[0].id
+            this.selectedParcel();
+          }
         });
         this.map.on("mouseleave", "citysandiego", () => {
           this.params = null;
@@ -365,51 +369,58 @@ export default {
     },
 
     getParcelFeatures() {
+      let point = this.map.project(this.coordinates)
       this.map.once("idle", () => {
-        let parcel = this.map.queryRenderedFeatures(this.marker._pos, {
+        let parcel = this.map.queryRenderedFeatures(point, {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
-        this.marker.remove();
+        this.currentParcelId = parcel[0].id
         this.selectedParcel();
         this.showMap = true;
       });
     },
 
     getBuildingFeatures(parcelCoordinates) {
-      let features = this.map.queryRenderedFeatures({layers: ['building-extrusion']});
-      let poly = this.$turf.polygon([parcelCoordinates])
-      this.filterBuildingFeatures = []
-      let buildingCoordinates = null
-      features.forEach(element => {
-        if(element.geometry.coordinates.length > 1){ //Se hace si el feature regresa un multipolygon
-          element.geometry.coordinates.forEach(subelement => {
-        buildingCoordinates = subelement 
-        let poly2 = this.$turf.polygon([buildingCoordinates[0]]) //Se guarda cada uno de los polygonos dentro del multipolygon
-        let intersection = this.$turf.intersect(poly, poly2);
-        if(intersection){
-        this.filterBuildingFeatures.push(intersection.geometry.coordinates)
-        }
+      let features = this.map.queryRenderedFeatures({
+        layers: ["building-extrusion"],
+      });
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      this.filterBuildingFeatures = [];
+      let buildingCoordinates = null;
+      features.forEach((element) => {
+        if (element.geometry.coordinates.length > 1) {
+          //Se hace si el feature regresa un multipolygon
+          element.geometry.coordinates.forEach((subelement) => {
+            buildingCoordinates = subelement;
+            let poly2 = this.$turf.polygon([buildingCoordinates[0]]); //Se guarda cada uno de los polygonos dentro del multipolygon
+            let intersection = this.$turf.intersect(poly, poly2);
+            if (intersection) {
+              this.filterBuildingFeatures.push(
+                intersection.geometry.coordinates
+              );
+            }
           });
-        }else{
-          buildingCoordinates = element.geometry.coordinates
-        let poly2 = this.$turf.polygon([buildingCoordinates[0]])
-        let intersection = this.$turf.intersect(poly, poly2);
-        if(intersection && intersection.geometry.coordinates.length > 1){ //Se hace si el intersection regresa un multipolygon
-          intersection.geometry.coordinates.forEach(element => {
-            this.filterBuildingFeatures.push(element)
-          });
-        }else if(intersection){
-        this.filterBuildingFeatures.push(intersection.geometry.coordinates)
-        }
+        } else {
+          buildingCoordinates = element.geometry.coordinates;
+          let poly2 = this.$turf.polygon([buildingCoordinates[0]]);
+          let intersection = this.$turf.intersect(poly, poly2);
+          if (intersection && intersection.geometry.coordinates.length > 1) {
+            //Se hace si el intersection regresa un multipolygon
+            intersection.geometry.coordinates.forEach((element) => {
+              this.filterBuildingFeatures.push(element);
+            });
+          } else if (intersection) {
+            this.filterBuildingFeatures.push(intersection.geometry.coordinates);
+          }
         }
       });
       console.log(this.filterBuildingFeatures);
     },
 
     selectedParcel() {
-      let pitch = this.map.getPitch()
-      this.map.setPitch(pitch - 1)
+      let pitch = this.map.getPitch();
+      this.map.setPitch(pitch - 1);
       let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
       if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
@@ -437,27 +448,18 @@ export default {
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
-      
-      let poly = this.$turf.polygon([parcelCoordinates])
-      let bbox = this.$turf.bbox(poly)
-      
+
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      let bbox = this.$turf.bbox(poly);
+      let area = this.$turf.area(poly)
+      console.log(area);
       this.map.fitBounds(bbox, {
-        padding: 20,
-        pitch: 0,
+        padding: 120,
       });
 
-      this.map.once('moveend', ()=>{
+      this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
-        this.map.fitBounds(bbox, {
-        padding: 20,
-        zoom: 19.5,
-        pitch: 45,
-        duration: 2000
       });
-      })
-
-      
-      
     },
 
     onAddressChange() {
@@ -542,8 +544,8 @@ export default {
           "fill-opacity": [
             "case",
             ["boolean", ["feature-state", "hover"], false],
-            1,
-            0.5,
+            0.8,
+            0.2,
           ],
         },
       });
@@ -686,7 +688,7 @@ export default {
       ]);
       let difference = this.$turf.difference(poly2, poly3);
       let finishLoop = false;
-      
+
       this.filterBuildingFeatures.forEach((element) => {
         if (!finishLoop) {
           let poly = this.$turf.polygon([element[0]]);
@@ -702,15 +704,6 @@ export default {
           }
         }
       });
-    },
-
-    initMarker() {
-      this.marker = new this.$mapboxgl.Marker({
-        color: "black",
-        draggable: false,
-      })
-        .setLngLat(this.coordinates)
-        .addTo(this.map);
     },
 
     initZoomLevel() {
@@ -768,6 +761,7 @@ export default {
         .addTo(this.map);
     },
   },
+
   watch: {
     coordinates: {
       deep: true,
@@ -797,6 +791,28 @@ export default {
         this.onAddressChange();
       },
     },
+
+    // changeStyle: {
+    //   handler(value, old) {
+    //     if (value) {
+    //       this.map.setStyle("mapbox://styles/mapbox/satellite-v9");
+    //       this.map.once("styledata", () => {
+    //         this.initTilesets();
+    //         this.initParcelTileset();
+    //         // this.getParcelFeatures();
+    //       });
+    //     } else {
+    //       this.map.setStyle(
+    //         "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o"
+    //       );
+    //       this.map.once("styledata", () => {
+    //         this.initTilesets();
+    //         this.initParcelTileset();
+    //       });
+    //     }
+    //   },
+    // },
+
     params: debounce(async function (value) {
       if (this.params) {
         await this.$store.dispatch("polygons/get", this.params);
@@ -837,6 +853,7 @@ body {
   width: 100%;
   height: 100vh;
 }
+
 .sideDiv {
   overflow-y: scroll;
 }
