@@ -179,14 +179,14 @@
               class="alert"
               show
               variant="success"
-              >Well done Peter, I couldn't do it without you</b-alert
+              >ADU Feasibility approved</b-alert
             >
             <b-alert
               v-if="!aduStatePosition"
               class="alert"
               show
               variant="danger"
-              >Can't build the ADU here. Feasibility problem.</b-alert
+              >Can't build the ADU here. F`easibility problem.</b-alert
             >
           </div>
           <div class="BoundIcon">
