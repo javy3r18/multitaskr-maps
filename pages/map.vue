@@ -179,7 +179,7 @@
               class="alert"
               show
               variant="success"
-              >Well done Peter, I couldn't do it without you</b-alert
+              >ADU Feasibility approved</b-alert
             >
             <b-alert
               v-if="!aduStatePosition"
@@ -456,7 +456,12 @@ export default {
       this.map.fitBounds(bbox, {
         padding: 120,
       });
-
+      let lngLat = {
+        lng: this.coordinates.lng,
+        lat: this.coordinates.lat
+      }
+      let elevation = this.map.queryTerrainElevation(lngLat, { exaggerated: false })
+      console.log(elevation);
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
       });
