@@ -43,8 +43,45 @@
           </div>
         </b-col>
       </b-row>
-      <b-row>
-        <b-col class="sideDiv" cols="3">
+      <b-row :class="[$style.map_content]">
+        <b-col :class="[$style.sideMap]" cols="9">
+            <div id="map"></div>
+            <div v-if="aduExist">
+              <b-alert
+                v-if="aduStatePosition"
+                class="alert"
+                show
+                variant="success"
+                >ADU Feasibility approved</b-alert
+              >
+              <b-alert
+                v-if="!aduStatePosition"
+                class="alert"
+                show
+                variant="danger"
+                >Can't build the ADU here. Feasibility problem.</b-alert
+              >
+            </div>
+            <div class="BoundIcon">
+              <div
+                title="Reset parcel view"
+                @click="currentParcel"
+                id="toggleicon"
+                class="location-icon"
+              >
+                <b-icon icon="cursor"></b-icon>
+              </div>
+            </div>
+            <div class="PlusMinusIcons">
+              <b-button-group vertical>
+                <b-button @click="setZoomIn" style="background-color: #4d04ae"
+                  >+</b-button
+                >
+                <b-button @click="setZoomOut" variant="secondary">-</b-button>
+              </b-button-group>
+            </div>
+          </b-col>
+        <b-col :class="[$style.sideDiv]" cols="3">
           <div class="m-3">
             <hr />
             <div>
@@ -170,43 +207,7 @@
               <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
             </b-tabs>
           </div>
-        </b-col>
-        <b-col cols="9">
-          <div id="map"></div>
-          <div v-if="aduExist">
-            <b-alert
-              v-if="aduStatePosition"
-              class="alert"
-              show
-              variant="success"
-              >ADU Feasibility approved</b-alert
-            >
-            <b-alert
-              v-if="!aduStatePosition"
-              class="alert"
-              show
-              variant="danger"
-              >Can't build the ADU here. Feasibility problem.</b-alert
-            >
-          </div>
-          <div class="BoundIcon">
-            <div
-              title="Reset parcel view"
-              @click="currentParcel"
-              id="toggleicon"
-              class="location-icon"
-            >
-              <b-icon icon="cursor"></b-icon>
-            </div>
-          </div>
-          <div class="PlusMinusIcons">
-            <b-button-group vertical>
-              <b-button @click="setZoomIn" style="background-color: #4d04ae"
-                >+</b-button
-              >
-              <b-button @click="setZoomOut" variant="secondary">-</b-button>
-            </b-button-group>
-          </div>
+
         </b-col>
       </b-row>
     </b-container>
@@ -336,8 +337,8 @@ export default {
             layers: ["citysandiego"],
           });
           this.parcelFeatures = content[0];
-          if(this.currentParcelId != content[0].id){
-            this.currentParcelId = content[0].id
+          if (this.currentParcelId != content[0].id) {
+            this.currentParcelId = content[0].id;
             this.selectedParcel();
           }
         });
@@ -369,13 +370,13 @@ export default {
     },
 
     getParcelFeatures() {
-      let point = this.map.project(this.coordinates)
+      let point = this.map.project(this.coordinates);
       this.map.once("idle", () => {
         let parcel = this.map.queryRenderedFeatures(point, {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
-        this.currentParcelId = parcel[0].id
+        this.currentParcelId = parcel[0].id;
         this.selectedParcel();
         this.showMap = true;
       });
@@ -451,16 +452,18 @@ export default {
 
       let poly = this.$turf.polygon([parcelCoordinates]);
       let bbox = this.$turf.bbox(poly);
-      let area = this.$turf.area(poly)
+      let area = this.$turf.area(poly);
       console.log(area);
       this.map.fitBounds(bbox, {
         padding: 120,
       });
       let lngLat = {
         lng: this.coordinates.lng,
-        lat: this.coordinates.lat
-      }
-      let elevation = this.map.queryTerrainElevation(lngLat, { exaggerated: false })
+        lat: this.coordinates.lat,
+      };
+      let elevation = this.map.queryTerrainElevation(lngLat, {
+        exaggerated: false,
+      });
       console.log(elevation);
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
@@ -849,7 +852,9 @@ export default {
   },
 };
 </script>
-
+<style module>
+@import url(./responsive.module.css);
+</style>
 <style>
 body {
   overflow-x: hidden;
@@ -859,9 +864,6 @@ body {
   height: 100vh;
 }
 
-.sideDiv {
-  overflow-y: scroll;
-}
 .alert {
   position: absolute;
   top: 10px;

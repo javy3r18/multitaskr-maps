@@ -1,0 +1,19 @@
+.sideDiv {
+    overflow-y: scroll;
+}
+
+.map_content{
+    flex-direction: row-reverse;
+}
+
+@media only screen and (max-width: 960px) {
+    .map_content{
+        display: block;
+    }
+
+    .map_content .sideDiv,
+    .map_content .sideMap
+    {
+        max-width: 100%;
+    }
+}
