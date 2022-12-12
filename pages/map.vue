@@ -16,162 +16,6 @@
     >
       <b-row>
         <b-col cols="12">
-          <div>
-            <b-navbar toggleable="lg" type="dark">
-              <div>
-                <a href="/">
-                  <img
-                    src="https://gomultitaskr.com/wp-content/uploads/brizy/imgs/multitaskr-logo-png-202x30x0x0x202x30x1664907017.png"
-                    href="/"
-                  />
-                </a>
-              </div>
-              <b-navbar-nav class="ml-auto">
-                <b-nav-form>
-                  <b-form-input
-                    class="input-class"
-                    name="address"
-                    placeholder="Enter a California location"
-                    autocomplete="shipping address-line1"
-                  ></b-form-input>
-                </b-nav-form>
-              </b-navbar-nav>
-              <b-navbar-nav class="ml-auto">
-                <b-button style="background-color: #4e0eaf">Login</b-button>
-              </b-navbar-nav>
-            </b-navbar>
-          </div>
-        </b-col>
-      </b-row>
-      <b-row>
-        <b-col class="sideDiv" cols="3">
-          <div class="m-3">
-            <hr />
-            <div>
-              <b-card-text class="text-address">{{
-                inputs.address
-              }}</b-card-text>
-            </div>
-            <hr />
-            <b-tabs content-class="mt-3">
-              <b-tab title="Details" active>
-                <div class="details">
-                  <b-row>
-                    <b-col cols="6">
-                      <p>
-                        CITY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        STATE<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        PARCEL ID<br />
-                        <span id="underline">{{ parcelId }}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        LOT AREA<br />
-                        <span>0.82</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        YEAR BUILT<br />
-                        <span>2000</span>
-                      </p>
-                    </b-col>
-                    <b-col cols="6">
-                      <p>
-                        COUNTY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        ZIP CODE<br />
-                        <span>{{}}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-
-                        PROPERTY ID<br />
-                        <span>{{}}</span>
-                      </p>
-                    </b-col>
-                  </b-row>
-                  <div>
-                    <hr />
-                    <div class="collapsable-text">
-                      <b-container v-b-toggle.collapse-1>
-                        <span>Assesed Values</span>
-                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-                      </b-container>
-                      <hr />
-                      <b-container v-b-toggle.collapse-1>
-                        <span>Property details</span>
-                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-                      </b-container>
-                      <hr />
-                      <b-container v-b-toggle.collapse-1>
-                        <span>Environmental Hazards & Concerns</span>
-                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-                      </b-container>
-                      <hr />
-                      <b-container v-b-toggle.collapse-1>
-                        <span>Zoning & General Plan</span>
-                        <b-icon id="toggleicon" icon="chevron-down"></b-icon>
-                      </b-container>
-                    </div>
-                    <hr />
-                  </div>
-                </div>
-              </b-tab>
-              <b-tab title="ADU">
-                <div>
-                  <b-container v-b-toggle.collapse-1>
-                    <b-button @click="addFloor">Set ADU</b-button>
-                    <b-button v-if="aduExist" @click="add3DModel"
-                      >3D view</b-button
-                    >
-                    <b-button v-if="aduExist" @click="moveFloor"
-                      >Move ADU</b-button
-                    >
-                  </b-container>
-                  <hr />
-                  <b-container v-if="aduExist" v-b-toggle.collapse-1>
-                    <p>Rotate</p>
-                    <b-form-input
-                      id="range"
-                      v-model="rotation"
-                      type="range"
-                      min="0"
-                      max="360"
-                    ></b-form-input>
-                    <p>Degrees:</p>
-                    <b-form-input
-                      v-model="rotation"
-                      style="width: 25%"
-                    ></b-form-input>
-                  </b-container>
-                  <hr />
-                </div>
-              </b-tab>
-              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
-            </b-tabs>
-          </div>
-        </b-col>
-        <b-col cols="9">
           <div id="map"></div>
           <div v-if="aduExist">
             <b-alert
@@ -206,6 +50,25 @@
               >
               <b-button @click="setZoomOut" variant="secondary">-</b-button>
             </b-button-group>
+          </div>
+
+          <div class="setButton">
+            <b-button @click="addFloor" variant="secondary">Set adu</b-button>
+          </div>
+
+          <div v-if="aduExist" class="bottomBar">
+            <h2>ADU Settings</h2>
+            <p>Rotation</p>
+            <b-form-input
+              id="range"
+              v-model="rotation"
+              type="range"
+              min="0"
+              max="360"
+            ></b-form-input>
+            <p>Degrees:</p>
+            <b-form-input v-model="rotation" style="width: 25%"></b-form-input>
+            <b-button v-if="aduExist" @click="add3DModel">3D view</b-button>
           </div>
         </b-col>
       </b-row>
@@ -336,8 +199,8 @@ export default {
             layers: ["citysandiego"],
           });
           this.parcelFeatures = content[0];
-          if(this.currentParcelId != content[0].id){
-            this.currentParcelId = content[0].id
+          if (this.currentParcelId != content[0].id) {
+            this.currentParcelId = content[0].id;
             this.selectedParcel();
           }
         });
@@ -369,13 +232,13 @@ export default {
     },
 
     getParcelFeatures() {
-      let point = this.map.project(this.coordinates)
+      let point = this.map.project(this.coordinates);
       this.map.once("idle", () => {
         let parcel = this.map.queryRenderedFeatures(point, {
           layers: ["citysandiego"],
         });
         this.parcelFeatures = parcel[0];
-        this.currentParcelId = parcel[0].id
+        this.currentParcelId = parcel[0].id;
         this.selectedParcel();
         this.showMap = true;
       });
@@ -451,16 +314,18 @@ export default {
 
       let poly = this.$turf.polygon([parcelCoordinates]);
       let bbox = this.$turf.bbox(poly);
-      let area = this.$turf.area(poly)
+      let area = this.$turf.area(poly);
       console.log(area);
       this.map.fitBounds(bbox, {
         padding: 120,
       });
       let lngLat = {
         lng: this.coordinates.lng,
-        lat: this.coordinates.lat
-      }
-      let elevation = this.map.queryTerrainElevation(lngLat, { exaggerated: false })
+        lat: this.coordinates.lat,
+      };
+      let elevation = this.map.queryTerrainElevation(lngLat, {
+        exaggerated: false,
+      });
       console.log(elevation);
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
@@ -615,6 +480,7 @@ export default {
         layout: {},
       });
       this.aduExist = true;
+      this.movement();
       this.verifyAduSpace(this.firstPolygon);
     },
 
@@ -656,6 +522,46 @@ export default {
         this.is3D = false;
         this.switch3D = true;
       }
+    },
+
+    movement() {
+      this.map.on("mousedown", "floorLayer", (e) => {
+        e.preventDefault();
+        this.map.on('mousemove', this.move)
+        this.map.once('mouseup', ()=>{
+          this.map.off('mousemove', this.move)
+          this.verifyAduSpace(this.firstPolygon);
+        })
+      });
+
+      this.map.on("touchstart", "floorLayer", (e) => {
+        e.preventDefault();
+        this.map.on('touchmove', this.move)
+        this.map.once('touchend', ()=>{
+          this.map.off('touchmove', this.move)
+          this.verifyAduSpace(this.firstPolygon);
+        })
+      });
+
+    },
+
+    move(e){
+      var center = this.$turf.centroid(this.firstPolygon);
+          var from = this.$turf.point([
+            center.geometry.coordinates[0],
+            center.geometry.coordinates[1],
+          ]);
+          this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
+          var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
+          var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
+          this.firstPolygon = this.$turf.transformTranslate(
+            this.firstPolygon,
+            distance,
+            bearing
+          );
+          this.map.getSource("floor").setData(this.firstPolygon);
+          if (this.is3D)
+            this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
     },
 
     moveFloor() {
@@ -796,28 +702,6 @@ export default {
         this.onAddressChange();
       },
     },
-
-    // changeStyle: {
-    //   handler(value, old) {
-    //     if (value) {
-    //       this.map.setStyle("mapbox://styles/mapbox/satellite-v9");
-    //       this.map.once("styledata", () => {
-    //         this.initTilesets();
-    //         this.initParcelTileset();
-    //         // this.getParcelFeatures();
-    //       });
-    //     } else {
-    //       this.map.setStyle(
-    //         "mapbox://styles/javy3r18/cl9fvwqli000p15qskifof42o"
-    //       );
-    //       this.map.once("styledata", () => {
-    //         this.initTilesets();
-    //         this.initParcelTileset();
-    //       });
-    //     }
-    //   },
-    // },
-
     params: debounce(async function (value) {
       if (this.params) {
         await this.$store.dispatch("polygons/get", this.params);
@@ -859,16 +743,26 @@ body {
   height: 100vh;
 }
 
-.sideDiv {
-  overflow-y: scroll;
-}
 .alert {
   position: absolute;
   top: 10px;
 }
-.multitaskr {
-  background-color: #4e0eaf;
+
+.setButton {
+  position: absolute;
+  bottom: 10px;
 }
+
+.bottomBar {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  background-color: white;
+  bottom: 0;
+}
+
 .text-address {
   font-weight: bold;
   font-family: Arial, Helvetica, sans-serif;
