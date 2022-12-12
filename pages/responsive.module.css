@@ -1,19 +1,48 @@
+.map {
+    width: 100%;
+    height: 100vh;
+}
+
 .sideDiv {
     overflow-y: scroll;
 }
 
-.map_content{
+.map_content {
     flex-direction: row-reverse;
 }
 
+.adu_control {
+    display: none;
+}
+
 @media only screen and (max-width: 960px) {
-    .map_content{
+    .map_content {
         display: block;
+        position: relative;
     }
 
     .map_content .sideDiv,
-    .map_content .sideMap
-    {
+    .map_content .sideMap {
         max-width: 100%;
     }
+
+    .map_content .sideDiv,
+    .map_content .map {
+        height: 50vh;
+    }
+
+    .tabs_container
+    {
+        display: none;
+    }
+
+    .adu_control {
+        display: block;
+    }
+
+    /*.map_content .sideDiv
+    {
+        bottom: 0;
+        position: absolute;
+    }*/
 }

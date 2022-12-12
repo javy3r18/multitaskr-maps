@@ -45,42 +45,42 @@
       </b-row>
       <b-row :class="[$style.map_content]">
         <b-col :class="[$style.sideMap]" cols="9">
-            <div id="map"></div>
-            <div v-if="aduExist">
-              <b-alert
-                v-if="aduStatePosition"
-                class="alert"
-                show
-                variant="success"
-                >ADU Feasibility approved</b-alert
-              >
-              <b-alert
-                v-if="!aduStatePosition"
-                class="alert"
-                show
-                variant="danger"
-                >Can't build the ADU here. Feasibility problem.</b-alert
-              >
+          <div id="map" :class="[$style.map]"></div>
+          <div v-if="aduExist">
+            <b-alert
+              v-if="aduStatePosition"
+              class="alert"
+              show
+              variant="success"
+              >ADU Feasibility approved</b-alert
+            >
+            <b-alert
+              v-if="!aduStatePosition"
+              class="alert"
+              show
+              variant="danger"
+              >Can't build the ADU here. Feasibility problem.</b-alert
+            >
+          </div>
+          <div class="BoundIcon">
+            <div
+              title="Reset parcel view"
+              @click="currentParcel"
+              id="toggleicon"
+              class="location-icon"
+            >
+              <b-icon icon="cursor"></b-icon>
             </div>
-            <div class="BoundIcon">
-              <div
-                title="Reset parcel view"
-                @click="currentParcel"
-                id="toggleicon"
-                class="location-icon"
+          </div>
+          <div class="PlusMinusIcons">
+            <b-button-group vertical>
+              <b-button @click="setZoomIn" style="background-color: #4d04ae"
+                >+</b-button
               >
-                <b-icon icon="cursor"></b-icon>
-              </div>
-            </div>
-            <div class="PlusMinusIcons">
-              <b-button-group vertical>
-                <b-button @click="setZoomIn" style="background-color: #4d04ae"
-                  >+</b-button
-                >
-                <b-button @click="setZoomOut" variant="secondary">-</b-button>
-              </b-button-group>
-            </div>
-          </b-col>
+              <b-button @click="setZoomOut" variant="secondary">-</b-button>
+            </b-button-group>
+          </div>
+        </b-col>
         <b-col :class="[$style.sideDiv]" cols="3">
           <div class="m-3">
             <hr />
@@ -90,7 +90,7 @@
               }}</b-card-text>
             </div>
             <hr />
-            <b-tabs content-class="mt-3">
+            <b-tabs :class="[$style.tabs_container]" content-class="mt-3">
               <b-tab title="Details" active>
                 <div class="details">
                   <b-row>
@@ -204,10 +204,36 @@
                   <hr />
                 </div>
               </b-tab>
-              <b-tab title="Documents"><p>I'm a disabled tab!</p></b-tab>
+              <b-tab title="Documents"
+                ><p>I'm a disabled tab!</p></b-tab
+              >
             </b-tabs>
-          </div>
 
+            <div :class="[$style.adu_control]">
+              <b-container v-b-toggle.collapse-1>
+                <b-button @click="addFloor">Set ADU</b-button>
+                <b-button v-if="aduExist" @click="add3DModel">3D view</b-button>
+                <b-button v-if="aduExist" @click="moveFloor">Move ADU</b-button>
+              </b-container>
+              <hr />
+              <b-container v-if="aduExist" v-b-toggle.collapse-1>
+                <p>Rotate</p>
+                <b-form-input
+                  id="range"
+                  v-model="rotation"
+                  type="range"
+                  min="0"
+                  max="360"
+                ></b-form-input>
+                <p>Degrees:</p>
+                <b-form-input
+                  v-model="rotation"
+                  style="width: 25%"
+                ></b-form-input>
+              </b-container>
+              <hr />
+            </div>
+          </div>
         </b-col>
       </b-row>
     </b-container>
@@ -858,10 +884,6 @@ export default {
 <style>
 body {
   overflow-x: hidden;
-}
-#map {
-  width: 100%;
-  height: 100vh;
 }
 
 .alert {
