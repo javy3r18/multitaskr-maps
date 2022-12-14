@@ -15,7 +15,100 @@
       class="m-0 p-0"
     >
       <b-row>
-        <b-col cols="12">
+        <b-col class="sideBar" cols="2">
+          <div>
+            <b-tabs content-class="mt-3">
+              <b-tab class="details" title="Details" active>
+                <div>
+                  <b-row>
+                    <b-col cols="6">
+                      <p>
+                        CITY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        STATE<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        PARCEL ID<br />
+                        <span id="underline">{{ parcelId }}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        LOT AREA<br />
+                        <span>0.82</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+                        YEAR BUILT<br />
+                        <span>2000</span>
+                      </p>
+                    </b-col>
+                    <b-col cols="6">
+                      <p>
+                        COUNTY<br />
+                        <span id="underline">{{}}</span>
+                      </p>
+                      <p>
+                        ZIP CODE<br />
+                        <span>{{}}</span>
+                      </p>
+                      <p>
+                        <b-icon
+                          id="infoicon"
+                          icon="info-circle"
+                          font-scale="0.8"
+                        ></b-icon>
+
+                        PROPERTY ID<br />
+                        <span>{{}}</span>
+                      </p>
+                    </b-col>
+                  </b-row>
+                </div>
+              </b-tab>
+              <b-tab class="details" title="ADU">
+                <b-button @click="addFloor" variant="secondary"
+                  >Set adu</b-button
+                >
+                <div v-if="aduExist">
+                  <p>Rotation:</p>
+                  <b-form-input
+                    id="range"
+                    v-model="rotation"
+                    type="range"
+                    min="0"
+                    max="360"
+                  ></b-form-input>
+                  <p>Degrees:</p>
+                  <b-form-input
+                    v-model="rotation"
+                    style="width: 25%"
+                  ></b-form-input>
+                  <b-button
+                    style="background-color: #4e0eaf"
+                    v-if="aduExist"
+                    @click="add3DModel"
+                    >3D view</b-button
+                  >
+                </div>
+              </b-tab>
+              <b-tab title="Disabled" disabled
+                ><p>I'm a disabled tab!</p></b-tab
+              >
+            </b-tabs>
+          </div>
+        </b-col>
+        <b-col>
           <div id="map"></div>
           <div v-if="aduExist">
             <b-alert
@@ -54,30 +147,40 @@
 
           <div class="barContainer">
             <div class="setButton">
-            <b-button @click="addFloor" variant="secondary">Set adu</b-button>
-          </div>
+              <b-button @click="addFloor" variant="secondary">Set adu</b-button>
+            </div>
 
-          <div v-if="aduExist" class="bottomBar">
-            <div v-if="showMenu">
-              <div class="elementRow">
-            <h2>ADU Settings</h2>
-            <b-button class="closeButton" @click="showMenu = false">x</b-button>
+            <div v-if="aduExist" class="bottomBar">
+              <div v-if="showMenu">
+                <div class="elementRow">
+                  <h2>ADU Settings</h2>
+                  <b-button class="closeButton" @click="showMenu = false"
+                    >x</b-button
+                  >
+                </div>
+                <p>Rotation:</p>
+                <b-form-input
+                  id="range"
+                  v-model="rotation"
+                  type="range"
+                  min="0"
+                  max="360"
+                ></b-form-input>
+                <div class="elementRow">
+                  <p>Degrees:</p>
+                  <b-form-input
+                    v-model="rotation"
+                    style="width: 25%"
+                  ></b-form-input>
+                  <b-button
+                    style="background-color: #4e0eaf"
+                    v-if="aduExist"
+                    @click="add3DModel"
+                    >3D view</b-button
+                  >
+                </div>
               </div>
-            <p>Rotation:</p>
-            <b-form-input
-              id="range"
-              v-model="rotation"
-              type="range"
-              min="0"
-              max="360"
-            ></b-form-input>
-            <div class="elementRow">
-            <p>Degrees:</p>
-            <b-form-input v-model="rotation" style="width: 25%"></b-form-input>
-            <b-button style="background-color: #4e0eaf" v-if="aduExist" @click="add3DModel">3D view</b-button>
             </div>
-            </div>
-          </div>
           </div>
         </b-col>
       </b-row>
@@ -122,6 +225,7 @@ export default {
       aduExist: false,
       showMenu: false,
       firstPolygon: null,
+      aduPosition: null,
       newPolyCenter: null,
       rotation: 0,
       aduStatePosition: false,
@@ -492,6 +596,7 @@ export default {
       this.aduExist = true;
       this.showMenu = true;
       this.movement();
+      // this.aduRotation();
       this.verifyAduSpace(this.firstPolygon);
     },
 
@@ -535,44 +640,102 @@ export default {
       }
     },
 
+    // aduRotation() {
+    //   console.log(this.firstPolygon);
+    //   let center = this.firstPolygon.geometry.coordinates[0]
+    //   const geojson = {
+    //     type: "FeatureCollection",
+    //     features: [
+    //       {
+    //         type: "Feature",
+    //         geometry: {
+    //           type: "Point",
+    //           coordinates: center[0],
+    //         },
+    //       },
+    //     ],
+    //   };
+
+    //   this.map.addSource("point", {
+    //     type: "geojson",
+    //     data: geojson,
+    //   });
+
+    //   this.map.addLayer({
+    //     id: "point",
+    //     type: "circle",
+    //     source: "point",
+    //     paint: {
+    //       "circle-radius": 10,
+    //       "circle-color": "orange", 
+    //     },
+    //   });
+
+    //   this.map.on('mousedown', 'point', (e)=>{
+    //     e.preventDefault()
+    //     this.map.on('mousemove', this.rotate)
+    //     this.map.once('mouseup', ()=>{
+    //       this.map.off('mousemove', this.rotate)
+    //     })
+    //   })
+    // },
+
+    // rotate(e){
+    //   let x = e.originalEvent.layerX
+    //   let y = e.originalEvent.layerY
+    //   let angle = Math.atan2(y, x) * 180 / Math.PI;
+    //   console.log(angle);
+    // },
+
     movement() {
       this.map.on("mousedown", "floorLayer", (e) => {
         e.preventDefault();
-        this.map.on('mousemove', this.move)
-        this.map.once('mouseup', ()=>{
-          this.map.off('mousemove', this.move)
+        this.map.on("mousemove", "polygon", this.move);
+        this.map.once("mouseup", () => {
+          this.map.off("mousemove", "polygon", this.move);
           this.verifyAduSpace(this.firstPolygon);
-        })
+        });
       });
 
       this.map.on("touchstart", "floorLayer", (e) => {
         e.preventDefault();
-        this.map.on('touchmove', this.move)
-        this.map.once('touchend', ()=>{
-          this.map.off('touchmove', this.move)
-          this.verifyAduSpace(this.firstPolygon);
-        })
+        this.map.on("touchmove", "polygon", this.move);
+        this.map.once("touchend", () => {
+          this.map.off("touchmove", this.move);
+        });
       });
-
     },
 
-    move(e){
+    move(e) {
       var center = this.$turf.centroid(this.firstPolygon);
-          var from = this.$turf.point([
-            center.geometry.coordinates[0],
-            center.geometry.coordinates[1],
-          ]);
-          this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
-          var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
-          var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
-          this.firstPolygon = this.$turf.transformTranslate(
-            this.firstPolygon,
-            distance,
-            bearing
-          );
-          this.map.getSource("floor").setData(this.firstPolygon);
-          if (this.is3D)
-            this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
+      var from = this.$turf.point([
+        center.geometry.coordinates[0],
+        center.geometry.coordinates[1],
+      ]);
+      this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
+      var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
+      var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
+      this.firstPolygon = this.$turf.transformTranslate(
+        this.firstPolygon,
+        distance,
+        bearing
+      );
+      this.map.getSource("floor").setData(this.firstPolygon);
+      let rotatePoint = this.firstPolygon.geometry.coordinates[0]
+      // this.map.getSource('point').setData({
+      //   type: "FeatureCollection",
+      //   features: [
+      //     {
+      //       type: "Feature",
+      //       geometry: {
+      //         type: "Point",
+      //         coordinates: rotatePoint[0],
+      //       },
+      //     },
+      //   ],
+      // })
+      this.aduPosition = this.firstPolygon;
+      if (this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
     },
 
     moveFloor() {
@@ -691,6 +854,11 @@ export default {
         // this.getAddress();
       },
     },
+
+    aduPosition: function (value) {
+      this.verifyAduSpace(this.firstPolygon);
+    },
+
     rotation: function (value) {
       let degrees = +value;
       var center = this.$turf.centroid(this.firstPolygon);
@@ -746,8 +914,7 @@ export default {
 </script>
 
 <style>
-
-body{
+body {
   overflow-x: hidden;
 }
 
@@ -756,22 +923,27 @@ body{
   height: 100vh;
 }
 
+.sideBar {
+  display: block;
+}
+
+.details{
+  margin-inline: 20px;
+}
+
 .alert {
   position: absolute;
   top: 10px;
 }
 
-.barContainer{
-  width: 100%;
-  display: flex;
-  justify-content: center;
+.barContainer {
+  display: none;
 }
 
 .setButton {
   position: absolute;
   bottom: 10px;
 }
-
 
 .bottomBar {
   z-index: 10;
@@ -785,19 +957,19 @@ body{
   bottom: 0;
 }
 
-.bottomBar div{
+.bottomBar div {
   margin-top: 10px;
   margin-inline: 40px;
 }
 
-.elementRow{
+.elementRow {
   display: flex;
   justify-content: space-between;
   justify-items: center;
 }
 
-.closeButton{
-  background-color: rgba(0,0,0,0);
+.closeButton {
+  background-color: rgba(0, 0, 0, 0);
   border: none;
   color: black;
   font-size: large;
@@ -881,5 +1053,18 @@ body{
 .mapboxgl-popup {
   max-width: 400px;
   font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
+}
+
+@media only screen and (max-width: 960px) {
+  .sideBar {
+    display: none;
+  }
+
+  .barContainer {
+    display: block;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
 }
 </style>
