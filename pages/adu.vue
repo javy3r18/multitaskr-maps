@@ -200,6 +200,32 @@ export default {
         padding: 120,
       });
 
+
+      let scaledPoly = this.$turf.transformScale(poly, 0.8);
+      console.log(scaledPoly)
+
+      if (this.map.getSource('rightArea')) {
+        this.map.removeLayer('rightAreaLine')
+        this.map.removeSource('rightArea')
+      }
+
+      this.map.addSource("rightArea", {
+        type: "geojson",
+        data: scaledPoly,
+      });
+
+      this.map.addLayer({
+        id: "rightAreaLine",
+        type: "line",
+        source: "rightArea",
+        paint: {
+          "line-color": "green",
+          "line-width": 2
+        },
+      });
+
+
+
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
       });
