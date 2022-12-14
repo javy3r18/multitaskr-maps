@@ -701,7 +701,7 @@ export default {
         e.preventDefault();
         this.map.on("touchmove", "polygon", this.move);
         this.map.once("touchend", () => {
-          this.map.off("touchmove", this.move);
+          this.map.off("touchmove", 'polygon', this.move);
         });
       });
     },
