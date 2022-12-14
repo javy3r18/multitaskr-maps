@@ -52,13 +52,18 @@
             </b-button-group>
           </div>
 
-          <div class="setButton">
+          <div class="barContainer">
+            <div class="setButton">
             <b-button @click="addFloor" variant="secondary">Set adu</b-button>
           </div>
 
           <div v-if="aduExist" class="bottomBar">
+            <div v-if="showMenu">
+              <div class="elementRow">
             <h2>ADU Settings</h2>
-            <p>Rotation</p>
+            <b-button class="closeButton" @click="showMenu = false">x</b-button>
+              </div>
+            <p>Rotation:</p>
             <b-form-input
               id="range"
               v-model="rotation"
@@ -66,9 +71,13 @@
               min="0"
               max="360"
             ></b-form-input>
+            <div class="elementRow">
             <p>Degrees:</p>
             <b-form-input v-model="rotation" style="width: 25%"></b-form-input>
-            <b-button v-if="aduExist" @click="add3DModel">3D view</b-button>
+            <b-button style="background-color: #4e0eaf" v-if="aduExist" @click="add3DModel">3D view</b-button>
+            </div>
+            </div>
+          </div>
           </div>
         </b-col>
       </b-row>
@@ -111,6 +120,7 @@ export default {
       filterBuildingFeatures: [],
       parcelId: null,
       aduExist: false,
+      showMenu: false,
       firstPolygon: null,
       newPolyCenter: null,
       rotation: 0,
@@ -480,6 +490,7 @@ export default {
         layout: {},
       });
       this.aduExist = true;
+      this.showMenu = true;
       this.movement();
       this.verifyAduSpace(this.firstPolygon);
     },
@@ -735,9 +746,11 @@ export default {
 </script>
 
 <style>
-body {
+
+body{
   overflow-x: hidden;
 }
+
 #map {
   width: 100%;
   height: 100vh;
@@ -748,12 +761,21 @@ body {
   top: 10px;
 }
 
+.barContainer{
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 .setButton {
   position: absolute;
   bottom: 10px;
 }
 
+
 .bottomBar {
+  z-index: 10;
+  border-top: 1px solid gray;
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -761,6 +783,24 @@ body {
   width: 100%;
   background-color: white;
   bottom: 0;
+}
+
+.bottomBar div{
+  margin-top: 10px;
+  margin-inline: 40px;
+}
+
+.elementRow{
+  display: flex;
+  justify-content: space-between;
+  justify-items: center;
+}
+
+.closeButton{
+  background-color: rgba(0,0,0,0);
+  border: none;
+  color: black;
+  font-size: large;
 }
 
 .text-address {
