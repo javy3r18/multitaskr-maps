@@ -1,6 +1,6 @@
 <template>
-  <div>
-    <div
+<div>
+  <div
       :style="
         showMap
           ? 'display:none'
@@ -9,155 +9,19 @@
     >
       <h1>Loading...</h1>
     </div>
-    <b-container
+<b-container
       :style="showMap ? 'display: inline' : 'visibility: hidden'"
       fluid
       class="m-0 p-0"
-    >
-      <b-row>
-        <b-col class="sideBar" cols="2">
-          <div>
-            <b-tabs content-class="mt-3">
-              <b-tab class="details" title="Details" active>
-                <div>
-                  <b-row>
-                    <b-col cols="6">
-                      <p>
-                        CITY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        STATE<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        PARCEL ID<br />
-                        <span id="underline">{{ parcelId }}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        LOT AREA<br />
-                        <span>0.82</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        YEAR BUILT<br />
-                        <span>2000</span>
-                      </p>
-                    </b-col>
-                    <b-col cols="6">
-                      <p>
-                        COUNTY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        ZIP CODE<br />
-                        <span>{{}}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
+  > 
+  
+  <div id="map">
+    <div class="bottomBarContainer">
+        <b-button @click="showMenu = !showMenu" class="menuButton">Menu</b-button>
 
-                        PROPERTY ID<br />
-                        <span>{{}}</span>
-                      </p>
-                    </b-col>
-                  </b-row>
-                </div>
-              </b-tab>
-              <b-tab class="details" title="ADU">
-                <b-button @click="addFloor" variant="secondary"
-                  >Set adu</b-button
-                >
-                <div v-if="aduExist">
-                  <p>Rotation:</p>
-                  <b-form-input
-                    id="range"
-                    v-model="rotation"
-                    type="range"
-                    min="0"
-                    max="360"
-                  ></b-form-input>
-                  <p>Degrees:</p>
-                  <b-form-input
-                    v-model="rotation"
-                    style="width: 25%"
-                  ></b-form-input>
-                  <b-button
-                    style="background-color: #4e0eaf"
-                    v-if="aduExist"
-                    @click="add3DModel"
-                    >3D view</b-button
-                  >
-                </div>
-              </b-tab>
-              <b-tab title="Disabled" disabled
-                ><p>I'm a disabled tab!</p></b-tab
-              >
-            </b-tabs>
-          </div>
-        </b-col>
-        <b-col>
-          <div id="map"></div>
-          <div v-if="aduExist">
-            <b-alert
-              v-if="aduStatePosition"
-              class="alert"
-              show
-              variant="success"
-              >ADU Feasibility approved</b-alert
-            >
-            <b-alert
-              v-if="!aduStatePosition"
-              class="alert"
-              show
-              variant="danger"
-              >Can't build the ADU here. Feasibility problem.</b-alert
-            >
-          </div>
-          <div class="BoundIcon">
-            <div
-              title="Reset parcel view"
-              @click="currentParcel"
-              id="toggleicon"
-              class="location-icon"
-            >
-              <b-icon icon="cursor"></b-icon>
-            </div>
-          </div>
-          <div class="PlusMinusIcons">
-            <b-button-group vertical>
-              <b-button @click="setZoomIn" style="background-color: #4d04ae"
-                >+</b-button
-              >
-              <b-button @click="setZoomOut" variant="secondary">-</b-button>
-            </b-button-group>
-          </div>
-
-          <div class="barContainer">
-            <div class="setButton">
-              <b-button @click="addFloor" variant="secondary">Set adu</b-button>
-            </div>
-
-            <div v-if="aduExist" class="bottomBar">
-              <div v-if="showMenu">
-                <div class="elementRow">
-                  <h2>ADU Settings</h2>
-                  <b-button class="closeButton" @click="showMenu = false"
-                    >x</b-button
-                  >
-                </div>
+        <div v-if="showMenu" class="menu">
+                <div class="aduSettings" v-if="aduExist">
+                  <h3>Adu Settings</h3>               
                 <p>Rotation:</p>
                 <b-form-input
                   id="range"
@@ -174,18 +38,18 @@
                   ></b-form-input>
                   <b-button
                     style="background-color: #4e0eaf"
-                    v-if="aduExist"
                     @click="add3DModel"
                     >3D view</b-button
                   >
                 </div>
-              </div>
-            </div>
-          </div>
-        </b-col>
-      </b-row>
-    </b-container>
+                </div>
+                <b-button @click="addFloor" class="setButton">Set Adu</b-button>
+        </div>
+    </div>
   </div>
+  </b-container>
+</div>
+  
 </template>
 
 <script>
@@ -701,7 +565,7 @@ export default {
         e.preventDefault();
         this.map.on("touchmove", "polygon", this.move);
         this.map.once("touchend", () => {
-          this.map.off("touchmove", this.move);
+          this.map.off("touchmove", "polygon", this.move);
         });
       });
     },
@@ -914,157 +778,46 @@ export default {
 </script>
 
 <style>
-body {
-  overflow-x: hidden;
-}
-
 #map {
   width: 100%;
   height: 100vh;
 }
 
-.sideBar {
-  display: block;
-}
-
-.details{
-  margin-inline: 20px;
-}
-
-.alert {
-  position: absolute;
-  top: 10px;
-}
-
-.barContainer {
-  display: none;
-}
-
-.setButton {
-  position: absolute;
-  bottom: 10px;
-}
-
-.bottomBar {
-  z-index: 10;
-  border-top: 1px solid gray;
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: 100%;
-  background-color: white;
-  bottom: 0;
-}
-
-.bottomBar div {
-  margin-top: 10px;
-  margin-inline: 40px;
-}
-
-.elementRow {
-  display: flex;
-  justify-content: space-between;
-  justify-items: center;
-}
-
-.closeButton {
-  background-color: rgba(0, 0, 0, 0);
-  border: none;
-  color: black;
-  font-size: large;
-}
-
-.text-address {
-  font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 16px;
-}
-.input-class {
-  height: 30px;
-  font-size: 14px;
-  background-image: url(https://cdn2.hubspot.net/hubfs/4004166/bioticresearch_website_assets/images/search_icon.png);
-  background-repeat: no-repeat;
-  background-position: left center;
-  padding-left: 40px;
-  background-color: #fff;
-  border: 1px solid #4e0eaf;
-  box-shadow: none;
-  -webkit-appearance: none;
-}
-.toggleTitle {
-  font-size: 15px;
-  font-weight: bold;
-}
-.details {
-  color: #575758;
-  font-size: 15px;
-}
-.details span {
-  color: #67676b;
-}
-.collapsable-text {
-  font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
-}
-#underline {
-  color: #4e0eaf;
-  text-decoration: underline;
-}
-#toggleicon {
-  display: inline-block;
-  float: right;
-}
-#infoicon {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-}
-#infoicon:hover {
-  color: #4e0eaf;
-}
-.PlusMinusIcons {
-  position: absolute;
-  right: 0;
-  top: 80px;
-  right: 30px;
-}
-.BoundIcon {
-  position: absolute;
-  right: 0;
-  top: 20px;
-  right: 30px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: initial;
-  justify-content: center;
-  align-items: center;
-  background-color: #fff;
-  border: 1px solid #d7dbdd;
-  font-size: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 100%;
-}
-.location-icon {
-  display: flex;
-  justify-content: center;
-}
-.mapboxgl-popup {
-  max-width: 400px;
-  font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
-}
-
-@media only screen and (max-width: 960px) {
-  .sideBar {
-    display: none;
-  }
-
-  .barContainer {
-    display: block;
+.bottomBarContainer{
+    z-index: 10;
+    position: absolute;
     width: 100%;
     display: flex;
+    flex-direction: column;
     justify-content: center;
-  }
+    bottom: 0;
 }
+
+.menu{
+    background-color: white;
+}
+
+.menuButton{
+  border-radius: 0;
+}
+
+.aduSettings{
+  margin: 10px;
+}
+
+.elementRow{
+  width: 100%;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.setButton{
+  background-color: green;
+  border-radius: 0;
+  width: 100%;
+}
+
+
+
 </style>
