@@ -902,7 +902,7 @@ body {
 }
 .setButton {
   position: absolute;
-  bottom: 10px;
+  bottom: 25px;
 }
 .bottomBar {
   z-index: 10;
@@ -1015,6 +1015,7 @@ body {
   }
   .barContainer {
     display: block;
+    position: fixed;
     width: 100%;
     display: flex;
     justify-content: center;
