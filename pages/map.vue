@@ -881,7 +881,13 @@ export default {
 
 <style>
 body {
-  overflow-x: hidden;
+    min-height: 100vh;
+    min-height: fill-available;
+    min-height: -webkit-fill-available;
+}
+html {
+    height: fill-available;
+    height: -webkit-fill-available;
 }
 #map {
   width: 100%;
