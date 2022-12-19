@@ -476,7 +476,7 @@
             onAdd: (map, gl) => {
               window.tb = new Threebox(map, gl, { defaultLights: true });
               let options = {
-                obj: "./model/example.fbx",
+                obj: "../model/example.fbx",
                 type: "fbx",
                 scale: 0.02,
                 units: "meters",
@@ -521,6 +521,7 @@
         });
       },
       move(e) {
+        console.log(e);
         var center = this.$turf.centroid(this.firstPolygon);
         var from = this.$turf.point([
           center.geometry.coordinates[0],
@@ -535,7 +536,6 @@
           bearing
         );
         this.map.getSource("floor").setData(this.firstPolygon);
-        let rotatePoint = this.firstPolygon.geometry.coordinates[0]
         this.aduPosition = this.firstPolygon;
         if (this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
       },
@@ -590,7 +590,7 @@
         });
       },
       initZoomLevel() {
-        this.map.on("zoom", () => {
+        this.map.on("zoomend", () => {
           let currentZoom = this.map.getZoom();
           if (!this.marker && currentZoom < 15) {
             this.popup.remove();
@@ -606,14 +606,6 @@
             this.marker = null;
           }
         });
-      },
-      async getAddress() {
-        let params = {
-          lat: this.coordinates.lat,
-          lng: this.coordinates.lng,
-        };
-        await this.$store.dispatch("locations/get", params);
-        this.inputs.address = this.items.features[0].place_name;
       },
       currentParcel() {
         this.map.easeTo({
