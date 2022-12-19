@@ -15,8 +15,17 @@
         class="m-0 p-0"
     > 
     
-    <div id="map">
-      
+    <div id="map"></div>
+
+    <div v-if="aduExist">
+      <b-alert v-if="aduStatePosition" variant="success" show>ADU Feasibility approved</b-alert>
+      <b-alert v-if="!aduStatePosition" variant="danger" show>Can't build the ADU. Feasibility problem</b-alert>
+    </div>
+
+    <div class="navigation">
+      <b-button @click="currentParcel"><b-icon icon="cursor-fill"></b-icon></b-button>
+      <b-button @click="map.zoomIn()">+</b-button>
+      <b-button @click="map.zoomOut()">-</b-button>
     </div>
 
     <div class="bottomBarContainer">
@@ -751,6 +760,15 @@
     position: absolute;
     top: 0;
     bottom: 0;
+  }
+
+  .navigation{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    right: 10px;
+    top: 10px;
   }
   .bottomBarContainer{
       z-index: 10;
