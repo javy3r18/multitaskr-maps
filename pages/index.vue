@@ -56,7 +56,6 @@
             <span class="mx-2">Go</span
             ><b-icon icon="arrow-right-circle-fill"></b-icon>
           </button>
-          <b-nav-item to="/adu-index">ADU editing</b-nav-item>
         </b-row>
       </div>
     </form>
