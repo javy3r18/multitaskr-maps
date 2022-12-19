@@ -880,21 +880,7 @@ export default {
 </script>
 
 <style>
-html {
-  height: -webkit-fill-available;
-}
 
-body {
-  height: -webkit-fill-available;
-  overflow: hidden;
-}
-
-.fullContainer{
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  height: -webkit-fill-available;
-}
 #map {
   width: 100%;
   height: 100vh;
@@ -1028,7 +1014,7 @@ body {
   .barContainer {
     display: block;
     position: absolute;
-    bottom: 0;
+    bottom: 4%;
     width: 100%;
     display: flex;
     justify-content: center;
