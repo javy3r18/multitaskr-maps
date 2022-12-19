@@ -880,12 +880,16 @@ export default {
 </script>
 
 <style>
-html{
-  height: -webkit-fill-available;
-}
 body {
   overflow-x: hidden;
   height: -webkit-fill-available;
+    min-height: 100vh;
+    min-height: fill-available;
+    min-height: -webkit-fill-available;
+}
+html {
+    height: fill-available;
+    height: -webkit-fill-available;
 }
 #map {
   width: 100%;
@@ -906,7 +910,7 @@ body {
 }
 .setButton {
   position: absolute;
-  bottom: 10px;
+  bottom: 25px;
 }
 .bottomBar {
   z-index: 10;
@@ -1019,6 +1023,8 @@ body {
   }
   .barContainer {
     display: block;
+    position: absolute;
+    bottom: 0;
     width: 100%;
     display: flex;
     justify-content: center;
