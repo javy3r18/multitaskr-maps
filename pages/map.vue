@@ -43,7 +43,7 @@
                   >
                 </div>
                 </div>
-                <b-button @click="addFloor" class="setButton">Set Adu</b-button>
+                <b-button @click="addFloor" class="setButton">Set Adu a</b-button>
         </div>
     </div>
   </div>
