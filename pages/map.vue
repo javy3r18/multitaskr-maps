@@ -1,6 +1,9 @@
 <template>
   <div class="container">
     <div id="map"></div>
+    <div class="div">
+      Hi
+    </div>
   </div>
 </template>
 
@@ -30,6 +33,7 @@ html {
 
 body {
   height: -webkit-fill-available;
+  overflow: hidden;
 }
 
 .container{
@@ -41,4 +45,16 @@ body {
   width: 100%;
   height: 100vh;
 }
+
+.div{
+  position: absolute;
+  bottom: 0;
+  background-color: aqua;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  height: 100px;
+}
+
+
 </style>
