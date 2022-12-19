@@ -880,8 +880,12 @@ export default {
 </script>
 
 <style>
+html{
+  height: -webkit-fill-available;
+}
 body {
   overflow-x: hidden;
+  height: -webkit-fill-available;
 }
 #map {
   width: 100%;
