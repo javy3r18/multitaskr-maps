@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <b-container fluid class="fullContainer">
     <div
       :style="
         showMap
@@ -185,7 +185,7 @@
         </b-col>
       </b-row>
     </b-container>
-  </div>
+  </b-container>
 </template>
 
 <script>
@@ -880,16 +880,20 @@ export default {
 </script>
 
 <style>
-body {
-  overflow-x: hidden;
-  height: -webkit-fill-available;
-    min-height: 100vh;
-    min-height: fill-available;
-    min-height: -webkit-fill-available;
-}
 html {
-    height: fill-available;
-    height: -webkit-fill-available;
+  height: -webkit-fill-available;
+}
+
+body {
+  height: -webkit-fill-available;
+  overflow: hidden;
+}
+
+.fullContainer{
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  height: -webkit-fill-available;
 }
 #map {
   width: 100%;
