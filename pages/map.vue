@@ -12,7 +12,7 @@
     <b-container
       :style="showMap ? 'display: inline' : 'visibility: hidden'"
       fluid
-      class="m-0 p-0"
+      class="fullContainer"
     >
       <b-row>
         <b-col class="sideBar" cols="2">
