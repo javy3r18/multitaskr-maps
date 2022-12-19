@@ -476,7 +476,7 @@
             onAdd: (map, gl) => {
               window.tb = new Threebox(map, gl, { defaultLights: true });
               let options = {
-                obj: "./model/example.fbx",
+                obj: "../model/example.fbx",
                 type: "fbx",
                 scale: 0.02,
                 units: "meters",
