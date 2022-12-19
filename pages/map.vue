@@ -881,6 +881,11 @@ export default {
 
 <style>
 
+.fullContainer{
+  margin: 0;
+  padding: 0;
+}
+
 #map {
   width: 100%;
   height: 100vh;
@@ -1014,7 +1019,7 @@ export default {
   .barContainer {
     display: block;
     position: absolute;
-    bottom: 4%;
+    bottom: 10%;
     width: 100%;
     display: flex;
     justify-content: center;
