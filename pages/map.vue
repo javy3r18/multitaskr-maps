@@ -778,9 +778,17 @@ export default {
 </script>
 
 <style>
+html{
+  height: -webkit-fill-available;
+}
+body{
+  height: -webkit-fill-available;
+}
+
 #map {
   width: 100%;
   height: 100vh;
+  height: -webkit-fill-available;
 }
 
 .bottomBarContainer{
