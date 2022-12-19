@@ -32,7 +32,7 @@
           <b-button @click="showMenu = !showMenu" class="menuButton">Menu</b-button>
   
           <div v-if="showMenu" class="menu">
-                  <div class="aduSettings" v-if="aduExist">
+                  <div class="aduSettings">
                     <h3>Adu Settings</h3>               
                   <p>Rotation:</p>
                   <b-form-input
@@ -41,16 +41,19 @@
                     type="range"
                     min="0"
                     max="360"
+                    :disabled="!aduExist"
                   ></b-form-input>
                   <div class="elementRow">
                     <p>Degrees:</p>
                     <b-form-input
                       v-model="rotation"
                       style="width: 25%"
+                      :disabled="!aduExist"
                     ></b-form-input>
                     <b-button
                       style="background-color: #4e0eaf"
                       @click="add3DModel"
+                      :disabled="!aduExist"
                       >3D view</b-button
                     >
                   </div>
@@ -459,7 +462,6 @@
         this.aduExist = true;
         this.showMenu = true;
         this.movement();
-        // this.aduRotation();
         this.verifyAduSpace(this.firstPolygon);
       },
       add3DModel() {
@@ -501,48 +503,6 @@
           this.switch3D = true;
         }
       },
-      // aduRotation() {
-      //   console.log(this.firstPolygon);
-      //   let center = this.firstPolygon.geometry.coordinates[0]
-      //   const geojson = {
-      //     type: "FeatureCollection",
-      //     features: [
-      //       {
-      //         type: "Feature",
-      //         geometry: {
-      //           type: "Point",
-      //           coordinates: center[0],
-      //         },
-      //       },
-      //     ],
-      //   };
-      //   this.map.addSource("point", {
-      //     type: "geojson",
-      //     data: geojson,
-      //   });
-      //   this.map.addLayer({
-      //     id: "point",
-      //     type: "circle",
-      //     source: "point",
-      //     paint: {
-      //       "circle-radius": 10,
-      //       "circle-color": "orange", 
-      //     },
-      //   });
-      //   this.map.on('mousedown', 'point', (e)=>{
-      //     e.preventDefault()
-      //     this.map.on('mousemove', this.rotate)
-      //     this.map.once('mouseup', ()=>{
-      //       this.map.off('mousemove', this.rotate)
-      //     })
-      //   })
-      // },
-      // rotate(e){
-      //   let x = e.originalEvent.layerX
-      //   let y = e.originalEvent.layerY
-      //   let angle = Math.atan2(y, x) * 180 / Math.PI;
-      //   console.log(angle);
-      // },
       movement() {
         this.map.on("mousedown", "floorLayer", (e) => {
           e.preventDefault();
@@ -576,18 +536,6 @@
         );
         this.map.getSource("floor").setData(this.firstPolygon);
         let rotatePoint = this.firstPolygon.geometry.coordinates[0]
-        // this.map.getSource('point').setData({
-        //   type: "FeatureCollection",
-        //   features: [
-        //     {
-        //       type: "Feature",
-        //       geometry: {
-        //         type: "Point",
-        //         coordinates: rotatePoint[0],
-        //       },
-        //     },
-        //   ],
-        // })
         this.aduPosition = this.firstPolygon;
         if (this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
       },
@@ -674,12 +622,6 @@
           speed: 3,
           duration: 1500,
         });
-      },
-      setZoomIn() {
-        this.map.zoomIn();
-      },
-      setZoomOut() {
-        this.map.zoomOut();
       },
       showPopup(features) {
         let coordinates = features[0].geometry.coordinates[0];
