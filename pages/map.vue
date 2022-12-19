@@ -1,6 +1,6 @@
 <template>
-  <div id="map">
-
+  <div class="container">
+    <div id="map"></div>
   </div>
 </template>
 
@@ -29,6 +29,10 @@ html {
 }
 
 body {
+  height: -webkit-fill-available;
+}
+
+.container{
   height: 100vh;
   height: -webkit-fill-available;
 }
