@@ -246,6 +246,7 @@ export default {
       });
     },
     getElevationFeatures(parcelCoordinates){
+      this.filterTopoFeatures = []
       let poly = this.$turf.polygon([parcelCoordinates])
       let bbox = this.$turf.bbox(poly)
       let sw = [bbox[0],bbox[1]]
@@ -255,26 +256,14 @@ export default {
       let features = this.map.queryRenderedFeatures([swPoint, nePoint], {
         layers: ["topo2ft"],
       });
-
-      features.forEach(element => {
-        let coordinates = element.geometry.coordinates
-    let long = coordinates[0].length
-    let topoCoordinates = []
-    if (long > 2) {
-      topoCoordinates = coordinates.flat()
-    }else{
-      topoCoordinates = coordinates
-    }
-
-    topoCoordinates.forEach(insideElement => {
-      let lineturf = this.$turf.lineString(insideElement)
-      console.log(lineturf);
-      let intersection = this.$turf.lineOverlap(poly, lineturf);
-      console.log(intersection);
-    });
-      });
       console.log(features);
-      console.log(bbox);
+      features.forEach(element => {
+        let intersection = this.$turf.booleanIntersects(poly, element);
+        if(intersection){
+          this.filterTopoFeatures.push(element)
+        }
+      });
+      console.log(this.filterTopoFeatures);
 
     },
     selectedParcel() {
