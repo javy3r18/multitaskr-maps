@@ -80,7 +80,6 @@ import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
 Vue.use(BootstrapVue);
 Vue.use(BootstrapVueIcons);
 import { mapGetters } from "vuex";
-import { debounce } from "lodash";
 export default {
   data() {
     return {
@@ -102,11 +101,13 @@ export default {
       buildingMidPoint: null,
       filterBuildingFeatures: [],
       filterTopoFeatures: [],
+      filterAduIntersectsTopo: [],
       parcelId: null,
       aduExist: false,
       showMenu: false,
       firstPolygon: null,
       aduPosition: null,
+      aduLineCoordinates: null,
       newPolyCenter: null,
       rotation: 0,
       aduStatePosition: false,
@@ -146,6 +147,7 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
+        
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
@@ -299,6 +301,7 @@ export default {
           "fill-color": "#4D04AE",
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
+        minzoom: 15
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
@@ -410,35 +413,32 @@ export default {
       });
     },
     drawLine() {
+      let center = [parseFloat(this.newPolyCenter.geometry.coordinates[0]), parseFloat(this.newPolyCenter.geometry.coordinates[1])]
       let coordinates = [
         [
           this.buildingMidPoint.geometry.coordinates[0],
           this.buildingMidPoint.geometry.coordinates[1]
         ],
-        [
-          this.newPolyCenter.geometry.coordinates[0],
-          this.newPolyCenter.geometry.coordinates[1]
-        ]
+        center
       ]
-      this.map.addSource("line", {
-        type: "geojson",
-        data: {
-          type: "Feature",
-          geometry: {
-            type: "Polygon",
-            // These coordinates outline Maine.
-            coordinates: [coordinates],
-          },
-        },
+      this.aduLineCoordinates = this.$turf.lineString(coordinates) 
+      
+      if (this.map.getSource("lineSource")) {
+        this.map.removeLayer("lineTo");
+        this.map.removeSource("lineSource");
+      }
+      this.map.addSource("lineSource", {
+        type: 'geojson',
+        data: this.aduLineCoordinates,
       });
       this.map.addLayer({
-        id: "lineto",
+        id: "lineTo",
         type: "line",
-        source: "line",
+        source: "lineSource",
         layout: {},
         minzoom: 16.5,
         paint: {
-          "line-color": "green",
+          "line-color": "black",
           "line-width": 4,
         },
       });
@@ -491,6 +491,7 @@ export default {
       this.aduExist = true;
       this.showMenu = true;
       this.drawLine();
+      this.verifyAduLine();
       this.movement();
       // this.aduRotation();
       this.verifyAduSpace(this.firstPolygon);
@@ -606,7 +607,6 @@ export default {
         center.geometry.coordinates[1],
       ]);
       this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
-      console.log(this.newPolyCenter);
       var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
       var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
       this.firstPolygon = this.$turf.transformTranslate(
@@ -616,18 +616,6 @@ export default {
       );
       this.map.getSource("floor").setData(this.firstPolygon);
       let rotatePoint = this.firstPolygon.geometry.coordinates[0];
-      // this.map.getSource('point').setData({
-      //   type: "FeatureCollection",
-      //   features: [
-      //     {
-      //       type: "Feature",
-      //       geometry: {
-      //         type: "Point",
-      //         coordinates: rotatePoint[0],
-      //       },
-      //     },
-      //   ],
-      // })
       this.aduPosition = this.firstPolygon;
       if (this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
     },
@@ -652,6 +640,25 @@ export default {
           }
         }
       });
+    },
+    verifyAduLine(){
+      let intersection;
+      let filter = []
+      this.filterTopoFeatures.forEach(element => {
+        intersection = this.$turf.lineIntersect(element, this.aduLineCoordinates)
+        if(intersection.features.length > 0){
+          filter.push(intersection.features[0].geometry.coordinates)
+        }
+      });
+      if (filter.length > 0) {
+        filter.forEach(element => {
+          let point = this.map.project(element)
+          let features = this.map.queryRenderedFeatures(point, {
+            layers: ["topo2ft"],
+          });  
+          console.log(features);
+        });
+      }
     },
     initZoomLevel() {
       this.map.on("zoomend", () => {
@@ -698,30 +705,18 @@ export default {
       this.verifyAduSpace(this.firstPolygon);
     },
     newPolyCenter: function (value) {
+      let center = [parseFloat(value.geometry.coordinates[0]), parseFloat(value.geometry.coordinates[1])]
       let coordinates = [
         [
           this.buildingMidPoint.geometry.coordinates[0],
           this.buildingMidPoint.geometry.coordinates[1]
         ],
-        [
-          this.newPolyCenter.geometry.coordinates[0],
-          this.newPolyCenter.geometry.coordinates[1]
-        ]
+        center
       ]
-      this.map.getSource('line').setData({
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Polygon",
-              coordinates: [
-                coordinates
-              ],
-            },
-          },
-        ],
-      })
+
+      this.aduLineCoordinates = this.$turf.lineString(coordinates)
+      this.map.getSource('lineSource').setData(this.aduLineCoordinates)
+      this.verifyAduLine();
     },
     rotation: function (value) {
       let degrees = +value;
