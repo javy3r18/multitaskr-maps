@@ -1,41 +1,69 @@
 <template>
   <div>
-    <div :style="
-      showMap
-        ? 'display:none'
-        : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
-    ">
+    <div
+      :style="
+        showMap
+          ? 'display:none'
+          : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
+      "
+    >
       <h1>Loading...</h1>
     </div>
-    <b-container :style="showMap ? 'display: inline' : 'visibility: hidden'" fluid class="m-0 p-0">
-
+    <b-container
+      :style="showMap ? 'display: inline' : 'visibility: hidden'"
+      fluid
+      class="m-0 p-0"
+    >
       <div id="map"></div>
 
       <div v-if="aduExist">
-        <b-alert v-if="aduStatePosition" variant="success" show>ADU Feasibility approved</b-alert>
-        <b-alert v-if="!aduStatePosition" variant="danger" show>Can't build the ADU. Feasibility problem</b-alert>
+        <b-alert v-if="aduStatePosition" variant="success" show
+          >ADU Feasibility approved</b-alert
+        >
+        <b-alert v-if="!aduStatePosition" variant="danger" show
+          >Can't build the ADU. Feasibility problem</b-alert
+        >
       </div>
 
       <div class="navigation">
-        <b-button @click="currentParcel"><b-icon icon="cursor-fill"></b-icon></b-button>
+        <b-button @click="currentParcel"
+          ><b-icon icon="cursor-fill"></b-icon
+        ></b-button>
         <b-button @click="map.zoomIn()">+</b-button>
         <b-button @click="map.zoomOut()">-</b-button>
       </div>
 
       <div class="bottomBarContainer">
-        <b-button @click="showMenu = !showMenu" class="menuButton">Menu</b-button>
+        <b-button @click="showMenu = !showMenu" class="menuButton"
+          >Menu</b-button
+        >
 
         <div v-if="showMenu" class="menu">
           <div class="aduSettings">
             <p>Elevation: {{ elevation }}ft</p>
             <h3>Adu Settings</h3>
             <p>Rotation:</p>
-            <b-form-input id="range" v-model="rotation" type="range" min="0" max="360"
-              :disabled="!aduExist"></b-form-input>
+            <b-form-input
+              id="range"
+              v-model="rotation"
+              type="range"
+              min="0"
+              max="360"
+              :disabled="!aduExist"
+            ></b-form-input>
             <div class="elementRow">
               <p>Degrees:</p>
-              <b-form-input v-model="rotation" style="width: 25%" :disabled="!aduExist"></b-form-input>
-              <b-button style="background-color: #4e0eaf" @click="add3DModel" :disabled="!aduExist">3D view</b-button>
+              <b-form-input
+                v-model="rotation"
+                style="width: 25%"
+                :disabled="!aduExist"
+              ></b-form-input>
+              <b-button
+                style="background-color: #4e0eaf"
+                @click="add3DModel"
+                :disabled="!aduExist"
+                >3D view</b-button
+              >
             </div>
           </div>
           <b-button @click="addFloor" class="setButton">Set Adu</b-button>
@@ -43,9 +71,8 @@
       </div>
     </b-container>
   </div>
-
 </template>
-  
+
 <script>
 import { Threebox } from "threebox-plugin";
 import Vue from "vue";
@@ -205,49 +232,47 @@ export default {
       let poly = this.$turf.polygon([parcelCoordinates]);
       this.filterBuildingFeatures = [];
       let intersection;
-      features.forEach(element => {
-        intersection = this.$turf.booleanIntersects(poly, element)
+      features.forEach((element) => {
+        intersection = this.$turf.booleanIntersects(poly, element);
         if (intersection) {
-          this.filterBuildingFeatures.push(element)
+          this.filterBuildingFeatures.push(element);
         }
       });
       let buildingsArea = [];
       let maxArray = [];
-      this.filterBuildingFeatures.forEach(element => {
-        let areaIntersects = this.$turf.intersect(poly, element)
-        let area = this.$turf.area(areaIntersects)
-        buildingsArea.push({ polygon: areaIntersects, area: area })
-        maxArray.push(area)
+      this.filterBuildingFeatures.forEach((element) => {
+        let areaIntersects = this.$turf.intersect(poly, element);
+        let area = this.$turf.area(areaIntersects);
+        buildingsArea.push({ polygon: areaIntersects, area: area });
+        maxArray.push(area);
       });
-      let max = Math.max(...maxArray)
+      let max = Math.max(...maxArray);
       const index = maxArray.indexOf(max);
-      this.buildingMidPoint = this.$turf.centroid(buildingsArea[index].polygon)
+      this.buildingMidPoint = this.$turf.centroid(buildingsArea[index].polygon);
       console.log(this.buildingMidPoint);
-
     },
     getElevationFeatures(parcelCoordinates) {
-      this.filterTopoFeatures = []
-      this.elevation = []
-      let poly = this.$turf.polygon([parcelCoordinates])
-      let bbox = this.$turf.bbox(poly)
-      let sw = [bbox[0], bbox[1]]
-      let ne = [bbox[2], bbox[3]]
-      let swPoint = this.map.project(sw)
-      let nePoint = this.map.project(ne)
+      this.filterTopoFeatures = [];
+      this.elevation = [];
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      let bbox = this.$turf.bbox(poly);
+      let sw = [bbox[0], bbox[1]];
+      let ne = [bbox[2], bbox[3]];
+      let swPoint = this.map.project(sw);
+      let nePoint = this.map.project(ne);
       let features = this.map.queryRenderedFeatures([swPoint, nePoint], {
         layers: ["topo2ft"],
       });
       console.log(features);
-      features.forEach(element => {
+      features.forEach((element) => {
         let intersection = this.$turf.booleanIntersects(poly, element);
         if (intersection) {
-          this.filterTopoFeatures.push(element)
+          this.filterTopoFeatures.push(element);
         }
       });
-      this.filterTopoFeatures.forEach(element => {
-        this.elevation.push(element.properties.ELEVATION)
+      this.filterTopoFeatures.forEach((element) => {
+        this.elevation.push(element.properties.ELEVATION);
       });
-
     },
     selectedParcel() {
       let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
@@ -277,7 +302,7 @@ export default {
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
-      let bbox = this.$turf.bbox(this.parcelFeatures)
+      let bbox = this.$turf.bbox(this.parcelFeatures);
       this.map.fitBounds(bbox, {
         padding: 120,
       });
@@ -287,10 +312,10 @@ export default {
       };
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
-        let pitch = this.map.getPitch()
-        this.map.setPitch(0)
+        let pitch = this.map.getPitch();
+        this.map.setPitch(0);
         this.getElevationFeatures(parcelCoordinates);
-        this.map.setPitch(pitch)
+        this.map.setPitch(pitch);
       });
     },
     initTilesets() {
@@ -385,33 +410,36 @@ export default {
       });
     },
     drawLine() {
-      let filter = [this.buildingMidPoint.geometry.coordinates, this.newPolyCenter.geometry.coordinates]
-      let coordinates = filter.flat()
-      console.log(coordinates);
-      this.map.addSource('maine', {
-        'type': 'geojson',
-        'data': {
-          'type': 'Feature',
-          'geometry': {
-            'type': 'Polygon',
+      let coordinates = [
+        [
+          this.buildingMidPoint.geometry.coordinates[0],
+          this.buildingMidPoint.geometry.coordinates[1]
+        ],
+        [
+          this.newPolyCenter.geometry.coordinates[0],
+          this.newPolyCenter.geometry.coordinates[1]
+        ]
+      ]
+      this.map.addSource("line", {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
             // These coordinates outline Maine.
-            'coordinates': [
-              
-            ]
-          }
-        }
+            coordinates: [coordinates],
+          },
+        },
       });
       this.map.addLayer({
-        id: "parcelLine",
-        "source-layer": "citysandiego",
+        id: "lineto",
         type: "line",
-        source: "parcelsTileset",
+        source: "line",
         layout: {},
         minzoom: 16.5,
         paint: {
-          "line-dasharray": [4, 4],
-          "line-color": "#4D04AE",
-          "line-width": 2,
+          "line-color": "green",
+          "line-width": 4,
         },
       });
     },
@@ -462,6 +490,7 @@ export default {
       });
       this.aduExist = true;
       this.showMenu = true;
+      this.drawLine();
       this.movement();
       // this.aduRotation();
       this.verifyAduSpace(this.firstPolygon);
@@ -507,7 +536,7 @@ export default {
     },
     aduRotation() {
       console.log(this.firstPolygon);
-      let center = this.firstPolygon.geometry.coordinates[0]
+      let center = this.firstPolygon.geometry.coordinates[0];
       const geojson = {
         type: "FeatureCollection",
         features: [
@@ -533,13 +562,13 @@ export default {
           "circle-color": "orange",
         },
       });
-      this.map.on('mousedown', 'point', (e) => {
-        e.preventDefault()
-        this.map.on('mousemove', this.rotate)
-        this.map.once('mouseup', () => {
-          this.map.off('mousemove', this.rotate)
-        })
-      })
+      this.map.on("mousedown", "point", (e) => {
+        e.preventDefault();
+        this.map.on("mousemove", this.rotate);
+        this.map.once("mouseup", () => {
+          this.map.off("mousemove", this.rotate);
+        });
+      });
     },
     rotate(e) {
       var x = e.originalEvent.clientX - e.target._canvas.offsetLeft;
@@ -547,7 +576,7 @@ export default {
       var angle = 0;
       var newPosX = x - 200;
       var newPosY = y - 200;
-      var angle = -Math.atan2(newPosX, newPosY) * 180 / Math.PI + 90;
+      var angle = (-Math.atan2(newPosX, newPosY) * 180) / Math.PI + 90;
       angle = angle < 0 ? 360 + angle : angle;
       var pi = Math.PI;
       angle = angle * (pi / 180);
@@ -586,7 +615,7 @@ export default {
         bearing
       );
       this.map.getSource("floor").setData(this.firstPolygon);
-      let rotatePoint = this.firstPolygon.geometry.coordinates[0]
+      let rotatePoint = this.firstPolygon.geometry.coordinates[0];
       // this.map.getSource('point').setData({
       //   type: "FeatureCollection",
       //   features: [
@@ -669,7 +698,30 @@ export default {
       this.verifyAduSpace(this.firstPolygon);
     },
     newPolyCenter: function (value) {
-      // this.drawLine();
+      let coordinates = [
+        [
+          this.buildingMidPoint.geometry.coordinates[0],
+          this.buildingMidPoint.geometry.coordinates[1]
+        ],
+        [
+          this.newPolyCenter.geometry.coordinates[0],
+          this.newPolyCenter.geometry.coordinates[1]
+        ]
+      ]
+      this.map.getSource('line').setData({
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: {
+              type: "Polygon",
+              coordinates: [
+                coordinates
+              ],
+            },
+          },
+        ],
+      })
     },
     rotation: function (value) {
       let degrees = +value;
@@ -695,7 +747,7 @@ export default {
   },
 };
 </script>
-  
+
 <style>
 #map {
   width: 100%;
