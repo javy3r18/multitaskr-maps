@@ -1,28 +1,42 @@
 <template>
   <div>
-    <div :style="
-      showMap
-        ? 'display:none'
-        : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
-    ">
+    <div
+      :style="
+        showMap
+          ? 'display:none'
+          : 'display:inline; height:100vh; display:flex; justify-content:center; align-items:center; color:white; background-image: url(../loading.gif); background-size: cover;'
+      "
+    >
       <h1>Loading...</h1>
     </div>
-    <b-container :style="showMap ? 'display: inline' : 'visibility: hidden'" fluid class="m-0 p-0">
+    <b-container
+      :style="showMap ? 'display: inline' : 'visibility: hidden'"
+      fluid
+      class="m-0 p-0"
+    >
       <div id="map"></div>
 
       <div v-if="aduExist">
-        <b-alert v-if="aduStatePosition" variant="success" show>ADU Feasibility approved</b-alert>
-        <b-alert v-if="!aduStatePosition" variant="danger" show>Can't build the ADU. Feasibility problem</b-alert>
+        <b-alert v-if="aduStatePosition" variant="success" show
+          >ADU Feasibility approved</b-alert
+        >
+        <b-alert v-if="!aduStatePosition" variant="danger" show
+          >Can't build the ADU. Feasibility problem</b-alert
+        >
       </div>
 
       <div class="navigation">
-        <b-button @click="currentParcel"><b-icon icon="cursor-fill"></b-icon></b-button>
+        <b-button @click="currentParcel"
+          ><b-icon icon="cursor-fill"></b-icon
+        ></b-button>
         <b-button @click="map.zoomIn()">+</b-button>
         <b-button @click="map.zoomOut()">-</b-button>
       </div>
 
       <div class="bottomBarContainer">
-        <b-button @click="showMenu = !showMenu" class="menuButton">Menu</b-button>
+        <b-button @click="showMenu = !showMenu" class="menuButton"
+          >Menu</b-button
+        >
 
         <div v-if="showMenu" class="menu">
           <div class="aduSettings">
@@ -30,12 +44,27 @@
             <p>Elevation: {{ elevationFilter }}ft</p>
             <h3>Adu Settings</h3>
             <p>Rotation:</p>
-            <b-form-input id="range" v-model="rotation" type="range" min="0" max="360"
-              :disabled="!aduExist"></b-form-input>
+            <b-form-input
+              id="range"
+              v-model="rotation"
+              type="range"
+              min="0"
+              max="360"
+              :disabled="!aduExist"
+            ></b-form-input>
             <div class="elementRow">
               <p>Degrees:</p>
-              <b-form-input v-model="rotation" style="width: 25%" :disabled="!aduExist"></b-form-input>
-              <b-button style="background-color: #4e0eaf" @click="add3DModel" :disabled="!aduExist">3D view</b-button>
+              <b-form-input
+                v-model="rotation"
+                style="width: 25%"
+                :disabled="!aduExist"
+              ></b-form-input>
+              <b-button
+                style="background-color: #4e0eaf"
+                @click="add3DModel"
+                :disabled="!aduExist"
+                >3D view</b-button
+              >
             </div>
           </div>
           <b-button @click="addFloor" class="setButton">Set Adu</b-button>
@@ -161,8 +190,6 @@ export default {
           }
         });
         this.map.on("click", "citysandiego", (e) => {
-          this.map.dragPan.disable();
-          this.map.dragRotate.disable();
           this.coordinates = e.lngLat;
           let content = this.map.queryRenderedFeatures(e.point, {
             layers: ["citysandiego"],
@@ -271,7 +298,7 @@ export default {
           "fill-color": "#4D04AE",
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
-        minzoom: 15
+        minzoom: 15,
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
@@ -289,8 +316,6 @@ export default {
         this.map.setPitch(0);
         this.getElevationFeatures(parcelCoordinates);
         this.map.setPitch(pitch);
-        this.map.dragPan.enable();
-        this.map.dragRotate.enable();
       });
     },
     initTilesets() {
@@ -385,22 +410,25 @@ export default {
       });
     },
     drawLine() {
-      let center = [parseFloat(this.newPolyCenter.geometry.coordinates[0]), parseFloat(this.newPolyCenter.geometry.coordinates[1])]
+      let center = [
+        parseFloat(this.newPolyCenter.geometry.coordinates[0]),
+        parseFloat(this.newPolyCenter.geometry.coordinates[1]),
+      ];
       let coordinates = [
         [
           this.buildingMidPoint.geometry.coordinates[0],
-          this.buildingMidPoint.geometry.coordinates[1]
+          this.buildingMidPoint.geometry.coordinates[1],
         ],
-        center
-      ]
-      this.aduLineCoordinates = this.$turf.lineString(coordinates)
+        center,
+      ];
+      this.aduLineCoordinates = this.$turf.lineString(coordinates);
 
       if (this.map.getSource("lineSource")) {
         this.map.removeLayer("lineTo");
         this.map.removeSource("lineSource");
       }
       this.map.addSource("lineSource", {
-        type: 'geojson',
+        type: "geojson",
         data: this.aduLineCoordinates,
       });
       this.map.addLayer({
@@ -615,20 +643,48 @@ export default {
     },
     verifyAduLine() {
       let intersection;
-      let features;
-      let point;
-      this.filterTopoFeatures.forEach(element => {
-        intersection = this.$turf.lineIntersect(element, this.aduLineCoordinates)
-        if (intersection.features.length > 0) {
+      let intersect = [];
+      let morePoints = [];
+      this.filterTopoFeatures.forEach((element) => {
+        intersection = this.$turf.lineIntersect(
+          element,
+          this.aduLineCoordinates
+        );
 
-          point = this.map.project(intersection.features[0].geometry.coordinates)
-          features = this.map.queryRenderedFeatures(
-            point,
-            { layers: ['topo2ft'] }
-          );
-          console.log(features);
+        if (intersection.features.length > 0) {
+          intersect.push(intersection);
         }
       });
+      if (intersect.length == 1) {
+        let nearestPointAdu = this.$turf.nearestPoint(
+          this.newPolyCenter,
+          intersect[0]
+        );
+        let point = this.map.project(nearestPointAdu.geometry.coordinates);
+        let topoFeatureAduElevation = this.map.queryRenderedFeatures(point, {
+          layers: ["topo2ft"],
+        });
+        this.elevationFilter = 0
+      } else if (intersect.length > 1) {
+        intersect.forEach(element => {
+          let lineOnPoint = this.$turf.point(element.features[0].geometry.coordinates)
+          morePoints.push(lineOnPoint)
+        });
+        let featureCollection = this.$turf.featureCollection(morePoints);
+        let nearestPointAdu = this.$turf.nearestPoint(this.newPolyCenter, featureCollection);
+        let nearestPointBuilding = this.$turf.nearestPoint(this.buildingMidPoint, featureCollection);
+        let point1 = this.map.project(nearestPointAdu.geometry.coordinates)
+        let point2 = this.map.project(nearestPointBuilding.geometry.coordinates)
+        let topoFeatureAduElevation = this.map.queryRenderedFeatures(point1, {
+          layers: ["topo2ft"],
+        });
+        let topoFeatureBuildingElevation = this.map.queryRenderedFeatures(point2, {
+          layers: ["topo2ft"],
+        });
+        let aduNearestELevation = topoFeatureAduElevation[0].properties.ELEVATION
+        let buildingNearestELevation = topoFeatureBuildingElevation[0].properties.ELEVATION
+        this.elevationFilter = Math.abs(aduNearestELevation - buildingNearestELevation)
+      }
     },
     initZoomLevel() {
       this.map.on("zoomend", () => {
@@ -675,17 +731,20 @@ export default {
       this.verifyAduSpace(this.firstPolygon);
     },
     newPolyCenter: function (value) {
-      let center = [parseFloat(value.geometry.coordinates[0]), parseFloat(value.geometry.coordinates[1])]
+      let center = [
+        parseFloat(value.geometry.coordinates[0]),
+        parseFloat(value.geometry.coordinates[1]),
+      ];
       let coordinates = [
         [
           this.buildingMidPoint.geometry.coordinates[0],
-          this.buildingMidPoint.geometry.coordinates[1]
+          this.buildingMidPoint.geometry.coordinates[1],
         ],
-        center
-      ]
+        center,
+      ];
 
-      this.aduLineCoordinates = this.$turf.lineString(coordinates)
-      this.map.getSource('lineSource').setData(this.aduLineCoordinates)
+      this.aduLineCoordinates = this.$turf.lineString(coordinates);
+      this.map.getSource("lineSource").setData(this.aduLineCoordinates);
       this.verifyAduLine();
     },
     rotation: function (value) {
