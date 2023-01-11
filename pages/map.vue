@@ -31,6 +31,8 @@
         ></b-button>
         <b-button @click="map.zoomIn()">+</b-button>
         <b-button @click="map.zoomOut()">-</b-button>
+        <b-button @click="changeStyle"><b-icon icon="globe2"></b-icon
+        ></b-button>
       </div>
 
       <div class="bottomBarContainer">
@@ -40,8 +42,7 @@
 
         <div v-if="showMenu" class="menu">
           <div class="aduSettings">
-            <p>Elevation Array: {{ elevation }}ft</p>
-            <p>Elevation: {{ elevationFilter }}ft</p>
+            <p>ADU Elevation: {{ elevationFilter }}ft</p>
             <h3>Adu Settings</h3>
             <p>Rotation:</p>
             <b-form-input
@@ -117,7 +118,8 @@ export default {
       switch3D: true,
       currentParcelId: null,
       elevation: [],
-      elevationFilter: null,
+      elevationFilter: 0,
+      salliteView: false,
     };
   },
   computed: {
@@ -683,7 +685,7 @@ export default {
         });
         let aduNearestELevation = topoFeatureAduElevation[0].properties.ELEVATION
         let buildingNearestELevation = topoFeatureBuildingElevation[0].properties.ELEVATION
-        this.elevationFilter = Math.abs(aduNearestELevation - buildingNearestELevation)
+        this.elevationFilter = aduNearestELevation - buildingNearestELevation
       }
     },
     initZoomLevel() {
@@ -703,6 +705,15 @@ export default {
           this.marker = null;
         }
       });
+    },
+    changeStyle(){
+      this.salliteView = !this.salliteView
+      if(this.salliteView){
+        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 1)
+      
+      }else{
+        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 0)
+      }
     },
     currentParcel() {
       this.map.easeTo({
