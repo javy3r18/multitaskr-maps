@@ -1,5 +1,5 @@
 <template>
-  <b-container fluid class="fullContainer">
+  <div>
     <div
       :style="
         showMap
@@ -12,180 +12,67 @@
     <b-container
       :style="showMap ? 'display: inline' : 'visibility: hidden'"
       fluid
-      class="fullContainer"
+      class="m-0 p-0"
     >
-      <b-row>
-        <b-col class="sideBar" cols="2">
-          <div>
-            <b-tabs content-class="mt-3">
-              <b-tab class="details" title="Details" active>
-                <div>
-                  <b-row>
-                    <b-col cols="6">
-                      <p>
-                        CITY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        STATE<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        PARCEL ID<br />
-                        <span id="underline">{{ parcelId }}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        LOT AREA<br />
-                        <span>0.82</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
-                        YEAR BUILT<br />
-                        <span>2000</span>
-                      </p>
-                    </b-col>
-                    <b-col cols="6">
-                      <p>
-                        COUNTY<br />
-                        <span id="underline">{{}}</span>
-                      </p>
-                      <p>
-                        ZIP CODE<br />
-                        <span>{{}}</span>
-                      </p>
-                      <p>
-                        <b-icon
-                          id="infoicon"
-                          icon="info-circle"
-                          font-scale="0.8"
-                        ></b-icon>
+      <div id="map"></div>
 
-                        PROPERTY ID<br />
-                        <span>{{}}</span>
-                      </p>
-                    </b-col>
-                  </b-row>
-                </div>
-              </b-tab>
-              <b-tab class="details" title="ADU">
-                <b-button @click="addFloor" variant="secondary"
-                  >Set adu</b-button
-                >
-                <div v-if="aduExist">
-                  <p>Rotation:</p>
-                  <b-form-input
-                    id="range"
-                    v-model="rotation"
-                    type="range"
-                    min="0"
-                    max="360"
-                  ></b-form-input>
-                  <p>Degrees:</p>
-                  <b-form-input
-                    v-model="rotation"
-                    style="width: 25%"
-                  ></b-form-input>
-                  <b-button
-                    style="background-color: #4e0eaf"
-                    v-if="aduExist"
-                    @click="add3DModel"
-                    >3D view</b-button
-                  >
-                </div>
-              </b-tab>
-              <b-tab title="Disabled" disabled
-                ><p>I'm a disabled tab!</p></b-tab
+      <div v-if="aduExist">
+        <b-alert v-if="aduStatePosition" variant="success" show
+          >ADU Feasibility approved</b-alert
+        >
+        <b-alert v-if="!aduStatePosition" variant="danger" show
+          >Can't build the ADU. Feasibility problem</b-alert
+        >
+      </div>
+
+      <div class="navigation">
+        <b-button @click="currentParcel"
+          ><b-icon icon="cursor-fill"></b-icon
+        ></b-button>
+        <b-button @click="map.zoomIn()">+</b-button>
+        <b-button @click="map.zoomOut()">-</b-button>
+        <b-button @click="changeStyle"><b-icon icon="globe2"></b-icon
+        ></b-button>
+      </div>
+
+      <div class="bottomBarContainer">
+        <b-button @click="showMenu = !showMenu" class="menuButton"
+          >Menu</b-button
+        >
+
+        <div v-if="showMenu" class="menu">
+          <div class="aduSettings">
+            <p>ADU Elevation: {{ elevationFilter }}ft</p>
+            <h3>Adu Settings</h3>
+            <p>Rotation:</p>
+            <b-form-input
+              id="range"
+              v-model="rotation"
+              type="range"
+              min="0"
+              max="360"
+              :disabled="!aduExist"
+            ></b-form-input>
+            <div class="elementRow">
+              <p>Degrees:</p>
+              <b-form-input
+                v-model="rotation"
+                style="width: 25%"
+                :disabled="!aduExist"
+              ></b-form-input>
+              <b-button
+                style="background-color: #4e0eaf"
+                @click="add3DModel"
+                :disabled="!aduExist"
+                >3D view</b-button
               >
-            </b-tabs>
-          </div>
-        </b-col>
-        <b-col>
-          <div id="map"></div>
-          <div v-if="aduExist">
-            <b-alert
-              v-if="aduStatePosition"
-              class="alert"
-              show
-              variant="success"
-              >ADU Feasibility approved</b-alert
-            >
-            <b-alert
-              v-if="!aduStatePosition"
-              class="alert"
-              show
-              variant="danger"
-              >Can't build the ADU here. F`easibility problem.</b-alert
-            >
-          </div>
-          <div class="BoundIcon">
-            <div
-              title="Reset parcel view"
-              @click="currentParcel"
-              id="toggleicon"
-              class="location-icon"
-            >
-              <b-icon icon="cursor"></b-icon>
             </div>
           </div>
-          <div class="PlusMinusIcons">
-            <b-button-group vertical>
-              <b-button @click="setZoomIn" style="background-color: #4d04ae"
-                >+</b-button
-              >
-              <b-button @click="setZoomOut" variant="secondary">-</b-button>
-            </b-button-group>
-          </div>
-
-          <div class="barContainer">
-            <div class="setButton">
-              <b-button @click="addFloor" variant="secondary">Set adu</b-button>
-            </div>
-
-            <div v-if="aduExist" class="bottomBar">
-              <div v-if="showMenu">
-                <div class="elementRow">
-                  <h2>ADU Settings</h2>
-                  <b-button class="closeButton" @click="showMenu = false"
-                    >x</b-button
-                  >
-                </div>
-                <p>Rotation:</p>
-                <b-form-input
-                  id="range"
-                  v-model="rotation"
-                  type="range"
-                  min="0"
-                  max="360"
-                ></b-form-input>
-                <div class="elementRow">
-                  <p>Degrees:</p>
-                  <b-form-input
-                    v-model="rotation"
-                    style="width: 25%"
-                  ></b-form-input>
-                  <b-button
-                    style="background-color: #4e0eaf"
-                    v-if="aduExist"
-                    @click="add3DModel"
-                    >3D view</b-button
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-        </b-col>
-      </b-row>
+          <b-button @click="addFloor" class="setButton">Set Adu</b-button>
+        </div>
+      </div>
     </b-container>
-  </b-container>
+  </div>
 </template>
 
 <script>
@@ -195,23 +82,17 @@ import { BootstrapVue, BootstrapVueIcons } from "bootstrap-vue";
 Vue.use(BootstrapVue);
 Vue.use(BootstrapVueIcons);
 import { mapGetters } from "vuex";
-import { debounce } from "lodash";
 export default {
   data() {
     return {
       access_token:
         "pk.eyJ1IjoiZWxnZXJhcmRvIiwiYSI6ImNsOG90NjFtMzFucG0zeWw1YWRheTV5ZmYifQ.87BCgCSXpjLIHkqGsWUW7g",
       map: {},
-      search: {},
-      inputs: {
-        address: null,
-      },
       coordinates: {
         lng: this.$route.query.lng,
         lat: this.$route.query.lat,
       },
-      params: null,
-      geojsonArrays: [],
+      topoLines: [],
       hoveredStateId: null,
       mouseHover: null,
       popup: null,
@@ -220,18 +101,25 @@ export default {
       showMap: false,
       parcelFeatures: null,
       buildingFeatures: null,
+      buildingMidPoint: null,
       filterBuildingFeatures: [],
+      filterTopoFeatures: [],
+      filterAduIntersectsTopo: [],
       parcelId: null,
       aduExist: false,
       showMenu: false,
       firstPolygon: null,
       aduPosition: null,
+      aduLineCoordinates: null,
       newPolyCenter: null,
       rotation: 0,
       aduStatePosition: false,
       is3D: null,
       switch3D: true,
       currentParcelId: null,
+      elevation: [],
+      elevationFilter: 0,
+      salliteView: false,
     };
   },
   computed: {
@@ -243,7 +131,6 @@ export default {
   mounted() {
     this.createMap();
     this.isMapLoaded();
-    this.setAutoFill();
   },
   methods: {
     createMap() {
@@ -265,6 +152,7 @@ export default {
         this.initParcelTileset();
         this.getParcelFeatures();
         this.initZoomLevel();
+
         this.popup = new this.$mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false,
@@ -280,7 +168,6 @@ export default {
           if (this.mouseHover != id) {
             this.mouseHover = content[0].id;
             this.showPopup(content);
-            // this.params = e.lngLat;
             if (e.features.length > 0) {
               if (this.hoveredStateId !== null) {
                 this.map.setFeatureState(
@@ -316,7 +203,6 @@ export default {
           }
         });
         this.map.on("mouseleave", "citysandiego", () => {
-          this.params = null;
           this.map.getCanvas().style.cursor = "";
           this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
           this.mouseHover = null;
@@ -332,12 +218,6 @@ export default {
           }
           this.hoveredStateId = null;
         });
-      });
-    },
-    setAutoFill() {
-      this.search = this.$search.autofill({
-        accessToken: this.access_token,
-        options: { country: "us" },
       });
     },
     getParcelFeatures() {
@@ -358,39 +238,44 @@ export default {
       });
       let poly = this.$turf.polygon([parcelCoordinates]);
       this.filterBuildingFeatures = [];
-      let buildingCoordinates = null;
+      let intersection;
       features.forEach((element) => {
-        if (element.geometry.coordinates.length > 1) {
-          //Se hace si el feature regresa un multipolygon
-          element.geometry.coordinates.forEach((subelement) => {
-            buildingCoordinates = subelement;
-            let poly2 = this.$turf.polygon([buildingCoordinates[0]]); //Se guarda cada uno de los polygonos dentro del multipolygon
-            let intersection = this.$turf.intersect(poly, poly2);
-            if (intersection) {
-              this.filterBuildingFeatures.push(
-                intersection.geometry.coordinates
-              );
-            }
-          });
-        } else {
-          buildingCoordinates = element.geometry.coordinates;
-          let poly2 = this.$turf.polygon([buildingCoordinates[0]]);
-          let intersection = this.$turf.intersect(poly, poly2);
-          if (intersection && intersection.geometry.coordinates.length > 1) {
-            //Se hace si el intersection regresa un multipolygon
-            intersection.geometry.coordinates.forEach((element) => {
-              this.filterBuildingFeatures.push(element);
-            });
-          } else if (intersection) {
-            this.filterBuildingFeatures.push(intersection.geometry.coordinates);
-          }
+        intersection = this.$turf.booleanIntersects(poly, element);
+        if (intersection) {
+          this.filterBuildingFeatures.push(element);
         }
       });
-      console.log(this.filterBuildingFeatures);
+      let buildingsArea = [];
+      let maxArray = [];
+      this.filterBuildingFeatures.forEach((element) => {
+        let areaIntersects = this.$turf.intersect(poly, element);
+        let area = this.$turf.area(areaIntersects);
+        buildingsArea.push({ polygon: areaIntersects, area: area });
+        maxArray.push(area);
+      });
+      let max = Math.max(...maxArray);
+      const index = maxArray.indexOf(max);
+      this.buildingMidPoint = this.$turf.centroid(buildingsArea[index].polygon);
+    },
+    getElevationFeatures(parcelCoordinates) {
+      this.filterTopoFeatures = [];
+      let poly = this.$turf.polygon([parcelCoordinates]);
+      let bbox = this.$turf.bbox(poly);
+      let sw = [bbox[0], bbox[1]];
+      let ne = [bbox[2], bbox[3]];
+      let swPoint = this.map.project(sw);
+      let nePoint = this.map.project(ne);
+      let features = this.map.queryRenderedFeatures([swPoint, nePoint], {
+        layers: ["topo2ft"],
+      });
+      features.forEach((element) => {
+        let intersection = this.$turf.booleanIntersects(poly, element);
+        if (intersection) {
+          this.filterTopoFeatures.push(element);
+        }
+      });
     },
     selectedParcel() {
-      let pitch = this.map.getPitch();
-      this.map.setPitch(pitch - 1);
       let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
       if (this.map.getSource("mainAddress")) {
         this.map.removeLayer("polygon");
@@ -415,13 +300,11 @@ export default {
           "fill-color": "#4D04AE",
           "fill-outline-color": "rgba(66,100,251, 1)",
         },
+        minzoom: 15,
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
       this.map.moveLayer("polygon", "building-extrusion");
-      let poly = this.$turf.polygon([parcelCoordinates]);
-      let bbox = this.$turf.bbox(poly);
-      let area = this.$turf.area(poly);
-      console.log(area);
+      let bbox = this.$turf.bbox(this.parcelFeatures);
       this.map.fitBounds(bbox, {
         padding: 120,
       });
@@ -429,24 +312,16 @@ export default {
         lng: this.coordinates.lng,
         lat: this.coordinates.lat,
       };
-      let elevation = this.map.queryTerrainElevation(lngLat, {
-        exaggerated: false,
-      });
-      console.log(elevation);
       this.map.once("moveend", () => {
         this.getBuildingFeatures(parcelCoordinates);
-      });
-    },
-    onAddressChange() {
-      this.search.addEventListener("retrieve", (event) => {
-        this.coordinates.lat = event.detail.features[0].geometry.coordinates[1];
-        this.coordinates.lng = event.detail.features[0].geometry.coordinates[0];
-        this.getParcelFeatures;
-        this.selectedParcel(); // cambiar esta opcion a recargar la pagina con nuevas coordenadas
+        let pitch = this.map.getPitch();
+        this.map.setPitch(0);
+        this.getElevationFeatures(parcelCoordinates);
+        this.map.setPitch(pitch);
       });
     },
     initTilesets() {
-      let Sources = {
+      let sources = {
         // key = Source name, value = layer fill id, layer line id, minzoom, maxzoon
         jurisdictionTileset: [
           "sdcountyjurisdictions",
@@ -457,7 +332,7 @@ export default {
         chulaVistaTileset: ["chulavistazoning", "chulaVistaLine", 13, 16.5],
         sanDiegoTileset: ["city_sandiego_zoning", "sanDiegoLine", 13, 16.5],
       };
-      for (const [key, value] of Object.entries(Sources)) {
+      for (const [key, value] of Object.entries(sources)) {
         this.map.addSource(key, {
           type: "vector",
           url: "mapbox://multitaskr." + value[0],
@@ -536,6 +411,40 @@ export default {
         },
       });
     },
+    drawLine() {
+      let center = [
+        parseFloat(this.newPolyCenter.geometry.coordinates[0]),
+        parseFloat(this.newPolyCenter.geometry.coordinates[1]),
+      ];
+      let coordinates = [
+        [
+          this.buildingMidPoint.geometry.coordinates[0],
+          this.buildingMidPoint.geometry.coordinates[1],
+        ],
+        center,
+      ];
+      this.aduLineCoordinates = this.$turf.lineString(coordinates);
+
+      if (this.map.getSource("lineSource")) {
+        this.map.removeLayer("lineTo");
+        this.map.removeSource("lineSource");
+      }
+      this.map.addSource("lineSource", {
+        type: "geojson",
+        data: this.aduLineCoordinates,
+      });
+      this.map.addLayer({
+        id: "lineTo",
+        type: "line",
+        source: "lineSource",
+        layout: {},
+        minzoom: 16.5,
+        paint: {
+          "line-color": "black",
+          "line-width": 4,
+        },
+      });
+    },
     addFloor() {
       if (this.map.getSource("floor")) {
         this.map.removeLayer("floorLayer");
@@ -583,6 +492,8 @@ export default {
       });
       this.aduExist = true;
       this.showMenu = true;
+      this.drawLine();
+      this.verifyAduLine();
       this.movement();
       // this.aduRotation();
       this.verifyAduSpace(this.firstPolygon);
@@ -599,7 +510,7 @@ export default {
           onAdd: (map, gl) => {
             window.tb = new Threebox(map, gl, { defaultLights: true });
             let options = {
-              obj: "./model/example.fbx",
+              obj: "../model/example.fbx",
               type: "fbx",
               scale: 0.02,
               units: "meters",
@@ -626,48 +537,54 @@ export default {
         this.switch3D = true;
       }
     },
-    // aduRotation() {
-    //   console.log(this.firstPolygon);
-    //   let center = this.firstPolygon.geometry.coordinates[0]
-    //   const geojson = {
-    //     type: "FeatureCollection",
-    //     features: [
-    //       {
-    //         type: "Feature",
-    //         geometry: {
-    //           type: "Point",
-    //           coordinates: center[0],
-    //         },
-    //       },
-    //     ],
-    //   };
-    //   this.map.addSource("point", {
-    //     type: "geojson",
-    //     data: geojson,
-    //   });
-    //   this.map.addLayer({
-    //     id: "point",
-    //     type: "circle",
-    //     source: "point",
-    //     paint: {
-    //       "circle-radius": 10,
-    //       "circle-color": "orange", 
-    //     },
-    //   });
-    //   this.map.on('mousedown', 'point', (e)=>{
-    //     e.preventDefault()
-    //     this.map.on('mousemove', this.rotate)
-    //     this.map.once('mouseup', ()=>{
-    //       this.map.off('mousemove', this.rotate)
-    //     })
-    //   })
-    // },
-    // rotate(e){
-    //   let x = e.originalEvent.layerX
-    //   let y = e.originalEvent.layerY
-    //   let angle = Math.atan2(y, x) * 180 / Math.PI;
-    //   console.log(angle);
-    // },
+    aduRotation() {
+      console.log(this.firstPolygon);
+      let center = this.firstPolygon.geometry.coordinates[0];
+      const geojson = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: center[0],
+            },
+          },
+        ],
+      };
+      this.map.addSource("point", {
+        type: "geojson",
+        data: geojson,
+      });
+      this.map.addLayer({
+        id: "point",
+        type: "circle",
+        source: "point",
+        paint: {
+          "circle-radius": 10,
+          "circle-color": "orange",
+        },
+      });
+      this.map.on("mousedown", "point", (e) => {
+        e.preventDefault();
+        this.map.on("mousemove", this.rotate);
+        this.map.once("mouseup", () => {
+          this.map.off("mousemove", this.rotate);
+        });
+      });
+    },
+    rotate(e) {
+      var x = e.originalEvent.clientX - e.target._canvas.offsetLeft;
+      var y = e.originalEvent.clientY - e.target._canvas.offsetTop;
+      var angle = 0;
+      var newPosX = x - 200;
+      var newPosY = y - 200;
+      var angle = (-Math.atan2(newPosX, newPosY) * 180) / Math.PI + 90;
+      angle = angle < 0 ? 360 + angle : angle;
+      var pi = Math.PI;
+      angle = angle * (pi / 180);
+      console.log(angle);
+    },
     movement() {
       this.map.on("mousedown", "floorLayer", (e) => {
         e.preventDefault();
@@ -681,7 +598,7 @@ export default {
         e.preventDefault();
         this.map.on("touchmove", "polygon", this.move);
         this.map.once("touchend", () => {
-          this.map.off("touchmove", 'polygon', this.move);
+          this.map.off("touchmove", "polygon", this.move);
         });
       });
     },
@@ -700,48 +617,9 @@ export default {
         bearing
       );
       this.map.getSource("floor").setData(this.firstPolygon);
-      let rotatePoint = this.firstPolygon.geometry.coordinates[0]
-      // this.map.getSource('point').setData({
-      //   type: "FeatureCollection",
-      //   features: [
-      //     {
-      //       type: "Feature",
-      //       geometry: {
-      //         type: "Point",
-      //         coordinates: rotatePoint[0],
-      //       },
-      //     },
-      //   ],
-      // })
+      let rotatePoint = this.firstPolygon.geometry.coordinates[0];
       this.aduPosition = this.firstPolygon;
       if (this.is3D) this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
-    },
-    moveFloor() {
-      let stop = true;
-      this.map.on("mousemove", "polygon", (e) => {
-        if (stop) {
-          var center = this.$turf.centroid(this.firstPolygon);
-          var from = this.$turf.point([
-            center.geometry.coordinates[0],
-            center.geometry.coordinates[1],
-          ]);
-          this.newPolyCenter = this.$turf.point([e.lngLat.lng, e.lngLat.lat]);
-          var bearing = this.$turf.rhumbBearing(from, this.newPolyCenter);
-          var distance = this.$turf.rhumbDistance(from, this.newPolyCenter);
-          this.firstPolygon = this.$turf.transformTranslate(
-            this.firstPolygon,
-            distance,
-            bearing
-          );
-          this.map.getSource("floor").setData(this.firstPolygon);
-          if (this.is3D)
-            this.currentModel.setCoords([e.lngLat.lng, e.lngLat.lat]);
-        }
-      });
-      this.map.once("click", () => {
-        stop = false;
-        this.verifyAduSpace(this.firstPolygon);
-      });
     },
     verifyAduSpace(currentPolygon) {
       let poly2 = this.$turf.polygon([currentPolygon.geometry.coordinates[0]]);
@@ -752,8 +630,7 @@ export default {
       let finishLoop = false;
       this.filterBuildingFeatures.forEach((element) => {
         if (!finishLoop) {
-          let poly = this.$turf.polygon([element[0]]);
-          let intersection = this.$turf.intersect(poly, poly2);
+          let intersection = this.$turf.intersect(element, poly2);
           if (intersection != null || difference != null) {
             this.map.setPaintProperty("floorLayer", "fill-color", "red");
             this.aduStatePosition = false;
@@ -766,8 +643,53 @@ export default {
         }
       });
     },
+    verifyAduLine() {
+      let intersection;
+      let intersect = [];
+      let morePoints = [];
+      this.filterTopoFeatures.forEach((element) => {
+        intersection = this.$turf.lineIntersect(
+          element,
+          this.aduLineCoordinates
+        );
+
+        if (intersection.features.length > 0) {
+          intersect.push(intersection);
+        }
+      });
+      if (intersect.length == 1) {
+        let nearestPointAdu = this.$turf.nearestPoint(
+          this.newPolyCenter,
+          intersect[0]
+        );
+        let point = this.map.project(nearestPointAdu.geometry.coordinates);
+        let topoFeatureAduElevation = this.map.queryRenderedFeatures(point, {
+          layers: ["topo2ft"],
+        });
+        this.elevationFilter = 0
+      } else if (intersect.length > 1) {
+        intersect.forEach(element => {
+          let lineOnPoint = this.$turf.point(element.features[0].geometry.coordinates)
+          morePoints.push(lineOnPoint)
+        });
+        let featureCollection = this.$turf.featureCollection(morePoints);
+        let nearestPointAdu = this.$turf.nearestPoint(this.newPolyCenter, featureCollection);
+        let nearestPointBuilding = this.$turf.nearestPoint(this.buildingMidPoint, featureCollection);
+        let point1 = this.map.project(nearestPointAdu.geometry.coordinates)
+        let point2 = this.map.project(nearestPointBuilding.geometry.coordinates)
+        let topoFeatureAduElevation = this.map.queryRenderedFeatures(point1, {
+          layers: ["topo2ft"],
+        });
+        let topoFeatureBuildingElevation = this.map.queryRenderedFeatures(point2, {
+          layers: ["topo2ft"],
+        });
+        let aduNearestELevation = topoFeatureAduElevation[0].properties.ELEVATION
+        let buildingNearestELevation = topoFeatureBuildingElevation[0].properties.ELEVATION
+        this.elevationFilter = aduNearestELevation - buildingNearestELevation
+      }
+    },
     initZoomLevel() {
-      this.map.on("zoom", () => {
+      this.map.on("zoomend", () => {
         let currentZoom = this.map.getZoom();
         if (!this.marker && currentZoom < 15) {
           this.popup.remove();
@@ -784,13 +706,14 @@ export default {
         }
       });
     },
-    async getAddress() {
-      let params = {
-        lat: this.coordinates.lat,
-        lng: this.coordinates.lng,
-      };
-      await this.$store.dispatch("locations/get", params);
-      this.inputs.address = this.items.features[0].place_name;
+    changeStyle(){
+      this.salliteView = !this.salliteView
+      if(this.salliteView){
+        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 1)
+      
+      }else{
+        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 0)
+      }
     },
     currentParcel() {
       this.map.easeTo({
@@ -800,16 +723,8 @@ export default {
         duration: 1500,
       });
     },
-    setZoomIn() {
-      this.map.zoomIn();
-    },
-    setZoomOut() {
-      this.map.zoomOut();
-    },
     showPopup(features) {
-      let coordinates = features[0].geometry.coordinates[0];
-      let turfPolygon = this.$turf.polygon([coordinates]);
-      var centroid = this.$turf.centroid(turfPolygon);
+      var centroid = this.$turf.centroid(features[0]);
       this.popup
         .setLngLat(centroid.geometry.coordinates)
         .setHTML(features[0].properties.parcel_id)
@@ -825,6 +740,23 @@ export default {
     },
     aduPosition: function (value) {
       this.verifyAduSpace(this.firstPolygon);
+    },
+    newPolyCenter: function (value) {
+      let center = [
+        parseFloat(value.geometry.coordinates[0]),
+        parseFloat(value.geometry.coordinates[1]),
+      ];
+      let coordinates = [
+        [
+          this.buildingMidPoint.geometry.coordinates[0],
+          this.buildingMidPoint.geometry.coordinates[1],
+        ],
+        center,
+      ];
+
+      this.aduLineCoordinates = this.$turf.lineString(coordinates);
+      this.map.getSource("lineSource").setData(this.aduLineCoordinates);
+      this.verifyAduLine();
     },
     rotation: function (value) {
       let degrees = +value;
@@ -847,192 +779,59 @@ export default {
         this.onAddressChange();
       },
     },
-    params: debounce(async function (value) {
-      if (this.params) {
-        await this.$store.dispatch("polygons/get", this.params);
-        try {
-          let geojson = JSON.parse(this.polygons.geojson);
-          let parseJson = geojson.coordinates[0];
-          this.geojsonArrays = [];
-          parseJson.forEach((item) => {
-            let itemArray = [item[1], item[0]];
-            this.geojsonArrays.push(itemArray);
-          });
-          const bounds = new this.$mapboxgl.LngLatBounds(
-            this.geojsonArrays[0],
-            this.geojsonArrays[0]
-          );
-          for (const coord of this.geojsonArrays) {
-            bounds.extend(coord);
-          }
-          let center = bounds;
-          this.popup
-            .setLngLat(center.getCenter())
-            .setHTML("Example Address")
-            .addTo(this.map);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-    }, 500),
   },
 };
 </script>
 
 <style>
-html {
-  height: -webkit-fill-available;
-}
-
-body {
-  height: -webkit-fill-available;
-  overflow: hidden;
-}
-
-.fullContainer{
-  margin: 0;
-  padding: 0;
-  height: 100vh;
-  height: -webkit-fill-available;
-}
 #map {
   width: 100%;
-  height: 100vh;
-}
-.sideBar {
-  display: block;
-}
-.details{
-  margin-inline: 20px;
-}
-.alert {
   position: absolute;
-  top: 10px;
+  top: 0;
+  bottom: 0;
 }
-.barContainer {
-  display: none;
-}
-.setButton {
-  position: absolute;
-  bottom: 25px;
-}
-.bottomBar {
-  z-index: 10;
-  border-top: 1px solid gray;
+
+.navigation {
   position: absolute;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  gap: 10px;
+  right: 10px;
+  top: 10px;
+}
+
+.bottomBarContainer {
+  z-index: 10;
+  position: absolute;
   width: 100%;
-  background-color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   bottom: 0;
 }
-.bottomBar div {
-  margin-top: 10px;
-  margin-inline: 40px;
+
+.menu {
+  background-color: white;
 }
+
+.menuButton {
+  border-radius: 0;
+}
+
+.aduSettings {
+  margin: 10px;
+}
+
 .elementRow {
+  width: 100%;
   display: flex;
-  justify-content: space-between;
-  justify-items: center;
-}
-.closeButton {
-  background-color: rgba(0, 0, 0, 0);
-  border: none;
-  color: black;
-  font-size: large;
-}
-.text-address {
-  font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
-  font-size: 16px;
-}
-.input-class {
-  height: 30px;
-  font-size: 14px;
-  background-image: url(https://cdn2.hubspot.net/hubfs/4004166/bioticresearch_website_assets/images/search_icon.png);
-  background-repeat: no-repeat;
-  background-position: left center;
-  padding-left: 40px;
-  background-color: #fff;
-  border: 1px solid #4e0eaf;
-  box-shadow: none;
-  -webkit-appearance: none;
-}
-.toggleTitle {
-  font-size: 15px;
-  font-weight: bold;
-}
-.details {
-  color: #575758;
-  font-size: 15px;
-}
-.details span {
-  color: #67676b;
-}
-.collapsable-text {
-  font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
-}
-#underline {
-  color: #4e0eaf;
-  text-decoration: underline;
-}
-#toggleicon {
-  display: inline-block;
-  float: right;
-}
-#infoicon {
-  display: inline-block;
-  position: relative;
-  cursor: pointer;
-}
-#infoicon:hover {
-  color: #4e0eaf;
-}
-.PlusMinusIcons {
-  position: absolute;
-  right: 0;
-  top: 80px;
-  right: 30px;
-}
-.BoundIcon {
-  position: absolute;
-  right: 0;
-  top: 20px;
-  right: 30px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: initial;
-  justify-content: center;
+  justify-content: space-evenly;
   align-items: center;
-  background-color: #fff;
-  border: 1px solid #d7dbdd;
-  font-size: 20px;
-  width: 40px;
-  height: 40px;
-  border-radius: 100%;
 }
-.location-icon {
-  display: flex;
-  justify-content: center;
-}
-.mapboxgl-popup {
-  max-width: 400px;
-  font: 15px/20px "Helvetica Neue", Arial, Helvetica, sans-serif;
-}
-@media only screen and (max-width: 960px) {
-  .sideBar {
-    display: none;
-  }
-  .barContainer {
-    display: block;
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
+
+.setButton {
+  background-color: green;
+  border-radius: 0;
+  width: 100%;
 }
 </style>
-
