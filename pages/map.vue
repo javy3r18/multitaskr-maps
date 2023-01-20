@@ -26,12 +26,13 @@
       </div>
 
       <div class="navigation">
-        <b-button @click="currentParcel"
+        <b-button @click="moveToCurrentParcel"
           ><b-icon icon="cursor-fill"></b-icon
         ></b-button>
         <b-button @click="map.zoomIn()">+</b-button>
         <b-button @click="map.zoomOut()">-</b-button>
-        <b-button @click="changeStyle"><b-icon icon="globe2"></b-icon
+        <b-button @click="changeStyle"
+          ><b-icon icon="globe2"></b-icon
         ></b-button>
       </div>
 
@@ -68,7 +69,9 @@
               >
             </div>
           </div>
-          <b-button @click="addFloor" class="setButton">Set Adu</b-button>
+          <b-button @click="addAduFloorPlan" class="setButton"
+            >Set Adu</b-button
+          >
         </div>
       </div>
     </b-container>
@@ -199,12 +202,12 @@ export default {
           this.parcelFeatures = content[0];
           if (this.currentParcelId != content[0].id) {
             this.currentParcelId = content[0].id;
-            this.selectedParcel();
+            this.findSelectedParcel();
           }
         });
         this.map.on("mouseleave", "citysandiego", () => {
           this.map.getCanvas().style.cursor = "";
-          this.popup.remove(); // TODO: esta madre me quitar el popup cuando aun no se a generado. Arreglar!!!
+          this.popup.remove();
           this.mouseHover = null;
           if (this.hoveredStateId !== null) {
             this.map.setFeatureState(
@@ -228,20 +231,20 @@ export default {
         });
         this.parcelFeatures = parcel[0];
         this.currentParcelId = parcel[0].id;
-        this.selectedParcel();
+        this.findSelectedParcel();
         this.showMap = true;
       });
     },
-    getBuildingFeatures(parcelCoordinates) {
+    getBuildingFeatures({ parcelCoordinates }) {
       let features = this.map.queryRenderedFeatures({
         layers: ["building-extrusion"],
       });
       let poly = this.$turf.polygon([parcelCoordinates]);
       this.filterBuildingFeatures = [];
-      let intersection;
+      let topoIntersection;
       features.forEach((element) => {
-        intersection = this.$turf.booleanIntersects(poly, element);
-        if (intersection) {
+        topoIntersection = this.$turf.booleanIntersects(poly, element);
+        if (topoIntersection) {
           this.filterBuildingFeatures.push(element);
         }
       });
@@ -275,10 +278,10 @@ export default {
         }
       });
     },
-    selectedParcel() {
+    findSelectedParcel() {
       let parcelCoordinates = this.parcelFeatures.geometry.coordinates[0];
       if (this.map.getSource("mainAddress")) {
-        this.map.removeLayer("polygon");
+        this.map.removeLayer("parcel");
         this.map.removeSource("mainAddress");
       }
       this.map.addSource("mainAddress", {
@@ -292,7 +295,7 @@ export default {
         },
       });
       this.map.addLayer({
-        id: "polygon",
+        id: "parcel",
         generateId: true,
         source: "mainAddress",
         type: "fill",
@@ -303,7 +306,7 @@ export default {
         minzoom: 15,
       });
       this.parcelId = this.parcelFeatures.properties.parcel_id;
-      this.map.moveLayer("polygon", "building-extrusion");
+      this.map.moveLayer("parcel", "building-extrusion");
       let bbox = this.$turf.bbox(this.parcelFeatures);
       this.map.fitBounds(bbox, {
         padding: 120,
@@ -313,12 +316,14 @@ export default {
         lat: this.coordinates.lat,
       };
       this.map.once("moveend", () => {
-        this.getBuildingFeatures(parcelCoordinates);
+        this.getBuildingFeatures({ parcelCoordinates: parcelCoordinates });
         let pitch = this.map.getPitch();
         this.map.setPitch(0);
         this.getElevationFeatures(parcelCoordinates);
         this.map.setPitch(pitch);
       });
+
+      this.getOrientation();
     },
     initTilesets() {
       let sources = {
@@ -411,7 +416,7 @@ export default {
         },
       });
     },
-    drawLine() {
+    drawSlopeLine() {
       let center = [
         parseFloat(this.newPolyCenter.geometry.coordinates[0]),
         parseFloat(this.newPolyCenter.geometry.coordinates[1]),
@@ -445,7 +450,7 @@ export default {
         },
       });
     },
-    addFloor() {
+    addAduFloorPlan() {
       if (this.map.getSource("floor")) {
         this.map.removeLayer("floorLayer");
         this.map.removeSource("floor");
@@ -492,10 +497,9 @@ export default {
       });
       this.aduExist = true;
       this.showMenu = true;
-      this.drawLine();
-      this.verifyAduLine();
-      this.movement();
-      // this.aduRotation();
+      this.drawSlopeLine();
+      this.verifyAduLineBetween();
+      this.initDragInteraction();
       this.verifyAduSpace(this.firstPolygon);
     },
     add3DModel() {
@@ -537,72 +541,24 @@ export default {
         this.switch3D = true;
       }
     },
-    aduRotation() {
-      console.log(this.firstPolygon);
-      let center = this.firstPolygon.geometry.coordinates[0];
-      const geojson = {
-        type: "FeatureCollection",
-        features: [
-          {
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: center[0],
-            },
-          },
-        ],
-      };
-      this.map.addSource("point", {
-        type: "geojson",
-        data: geojson,
-      });
-      this.map.addLayer({
-        id: "point",
-        type: "circle",
-        source: "point",
-        paint: {
-          "circle-radius": 10,
-          "circle-color": "orange",
-        },
-      });
-      this.map.on("mousedown", "point", (e) => {
-        e.preventDefault();
-        this.map.on("mousemove", this.rotate);
-        this.map.once("mouseup", () => {
-          this.map.off("mousemove", this.rotate);
-        });
-      });
-    },
-    rotate(e) {
-      var x = e.originalEvent.clientX - e.target._canvas.offsetLeft;
-      var y = e.originalEvent.clientY - e.target._canvas.offsetTop;
-      var angle = 0;
-      var newPosX = x - 200;
-      var newPosY = y - 200;
-      var angle = (-Math.atan2(newPosX, newPosY) * 180) / Math.PI + 90;
-      angle = angle < 0 ? 360 + angle : angle;
-      var pi = Math.PI;
-      angle = angle * (pi / 180);
-      console.log(angle);
-    },
-    movement() {
+    initDragInteraction() {
       this.map.on("mousedown", "floorLayer", (e) => {
         e.preventDefault();
-        this.map.on("mousemove", "polygon", this.move);
+        this.map.on("mousemove", "parcel", this.moveAduFloorPlan);
         this.map.once("mouseup", () => {
-          this.map.off("mousemove", "polygon", this.move);
+          this.map.off("mousemove", "parcel", this.moveAduFloorPlan);
           this.verifyAduSpace(this.firstPolygon);
         });
       });
       this.map.on("touchstart", "floorLayer", (e) => {
         e.preventDefault();
-        this.map.on("touchmove", "polygon", this.move);
+        this.map.on("touchmove", "parcel", this.moveAduFloorPlan);
         this.map.once("touchend", () => {
-          this.map.off("touchmove", "polygon", this.move);
+          this.map.off("touchmove", "parcel", this.moveAduFloorPlan);
         });
       });
     },
-    move(e) {
+    moveAduFloorPlan(e) {
       var center = this.$turf.centroid(this.firstPolygon);
       var from = this.$turf.point([
         center.geometry.coordinates[0],
@@ -643,18 +599,18 @@ export default {
         }
       });
     },
-    verifyAduLine() {
-      let intersection;
-      let intersect = [];
-      let morePoints = [];
+    verifyAduLineBetween() {
+      let topoIntersection; //to catch every topo line that is inside the parcel and if intersects with the adu line
+      let intersect = []; //catch every topo line that intersects with the adu line
+      let pointOnFeatureCollention = [];
       this.filterTopoFeatures.forEach((element) => {
-        intersection = this.$turf.lineIntersect(
+        topoIntersection = this.$turf.lineIntersect(
           element,
           this.aduLineCoordinates
         );
 
-        if (intersection.features.length > 0) {
-          intersect.push(intersection);
+        if (topoIntersection.features.length > 0) {
+          intersect.push(topoIntersection);
         }
       });
       if (intersect.length == 1) {
@@ -666,26 +622,43 @@ export default {
         let topoFeatureAduElevation = this.map.queryRenderedFeatures(point, {
           layers: ["topo2ft"],
         });
-        this.elevationFilter = 0
+        this.elevationFilter = 0;
       } else if (intersect.length > 1) {
-        intersect.forEach(element => {
-          let lineOnPoint = this.$turf.point(element.features[0].geometry.coordinates)
-          morePoints.push(lineOnPoint)
+        intersect.forEach((element) => {
+          let lineOnPoint = this.$turf.point(
+            element.features[0].geometry.coordinates
+          );
+          pointOnFeatureCollention.push(lineOnPoint);
         });
-        let featureCollection = this.$turf.featureCollection(morePoints);
-        let nearestPointAdu = this.$turf.nearestPoint(this.newPolyCenter, featureCollection);
-        let nearestPointBuilding = this.$turf.nearestPoint(this.buildingMidPoint, featureCollection);
-        let point1 = this.map.project(nearestPointAdu.geometry.coordinates)
-        let point2 = this.map.project(nearestPointBuilding.geometry.coordinates)
+        let featureCollection = this.$turf.featureCollection(
+          pointOnFeatureCollention
+        );
+        let nearestPointAdu = this.$turf.nearestPoint(
+          this.newPolyCenter,
+          featureCollection
+        );
+        let nearestPointBuilding = this.$turf.nearestPoint(
+          this.buildingMidPoint,
+          featureCollection
+        );
+        let point1 = this.map.project(nearestPointAdu.geometry.coordinates);
+        let point2 = this.map.project(
+          nearestPointBuilding.geometry.coordinates
+        );
         let topoFeatureAduElevation = this.map.queryRenderedFeatures(point1, {
           layers: ["topo2ft"],
         });
-        let topoFeatureBuildingElevation = this.map.queryRenderedFeatures(point2, {
-          layers: ["topo2ft"],
-        });
-        let aduNearestELevation = topoFeatureAduElevation[0].properties.ELEVATION
-        let buildingNearestELevation = topoFeatureBuildingElevation[0].properties.ELEVATION
-        this.elevationFilter = aduNearestELevation - buildingNearestELevation
+        let topoFeatureBuildingElevation = this.map.queryRenderedFeatures(
+          point2,
+          {
+            layers: ["topo2ft"],
+          }
+        );
+        let aduNearestELevation =
+          topoFeatureAduElevation[0].properties.ELEVATION;
+        let buildingNearestELevation =
+          topoFeatureBuildingElevation[0].properties.ELEVATION;
+        this.elevationFilter = aduNearestELevation - buildingNearestELevation;
       }
     },
     initZoomLevel() {
@@ -706,16 +679,15 @@ export default {
         }
       });
     },
-    changeStyle(){
-      this.salliteView = !this.salliteView
-      if(this.salliteView){
-        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 1)
-      
-      }else{
-        this.map.setPaintProperty('mapbox-satellite', 'raster-opacity', 0)
+    changeStyle() {
+      this.salliteView = !this.salliteView;
+      if (this.salliteView) {
+        this.map.setPaintProperty("mapbox-satellite", "raster-opacity", 1);
+      } else {
+        this.map.setPaintProperty("mapbox-satellite", "raster-opacity", 0);
       }
     },
-    currentParcel() {
+    moveToCurrentParcel() {
       this.map.easeTo({
         center: this.coordinates,
         zoom: 19,
@@ -730,12 +702,234 @@ export default {
         .setHTML(features[0].properties.parcel_id)
         .addTo(this.map);
     },
+    getOrientation() {
+      //get parcel polygon
+      let parcelPolygon = this.$turf.polygon([
+        this.parcelFeatures.geometry.coordinates[0],
+      ]);
+
+      //get the center from parcel
+      let centerFeature = this.$turf.center(parcelPolygon);
+
+      //store object with center coordinates from centerFeature
+      let centerBound = {
+        lng: centerFeature.geometry.coordinates[0],
+        lat: centerFeature.geometry.coordinates[1],
+      };
+
+      //create parcel bbox
+      let bbox = this.$turf.bbox(parcelPolygon);
+
+      //create polygon bbox
+      let bboxPolygon = this.$turf.bboxPolygon(bbox);
+
+      //get centroid from parcel polygon
+      //let parcelCentroid = this.$turf.centroid(parcelPolygon);
+
+      //get centroid from bbox polygon
+      //let bboxCentroid = this.$turf.centroid(bboxPolygon);
+
+      //scale bbox polygon
+      let scaledBbox = this.$turf.transformScale(bboxPolygon, 1.05, {
+        options: "meters",
+      });
+
+      //those conditionals are used in case the user do click to another parcel
+      //if the layer exist, remove the layer to create the new layer and don't repeat it on the map
+      //same process to the source
+      if (this.map.getLayer("bbox-layer")) this.map.removeLayer("bbox-layer");
+      if (this.map.getSource("bbox-source"))
+        this.map.removeSource("bbox-source");
+
+      //create source
+      this.map.addSource(`bbox-source`, {
+        type: "geojson",
+        data: scaledBbox,
+      });
+
+      //create layer
+      this.map.addLayer({
+        id: `bbox-layer`,
+        type: "fill",
+        source: `bbox-source`,
+        paint: {
+          "fill-color": "rgb(125, 116, 116)",
+          "fill-opacity": 0,
+        },
+      });
+
+      //store the bbox geometry
+      let geometry = bboxPolygon.geometry.coordinates[0];
+
+      //get midpoints of each vertex
+
+      //the higherDistance is setted with 0
+      //to later compared with the first distance
+      let higherDistance = 0;
+      
+      let center = 0;
+      let dataDistances = [];
+
+      //this 'for' will get the midpoints of the borders
+      for (let index = 0; index < geometry.length; index++) {
+
+        //if the next is undefined take center of current and first
+        if (geometry[index + 1] !== undefined) {
+          
+          //center of current and next
+          let features = this.$turf.points([
+            geometry[index],
+            geometry[index + 1],
+          ]);
+
+          //store the midpoint of the current line
+          center = this.$turf.center(features);
+
+          //
+          let lineString = this.$turf.lineString([
+            [centerBound.lng, centerBound.lat],
+            center.geometry.coordinates,
+          ]);
+
+          let scaledLineString = this.$turf.transformScale(lineString, 1.05);
+
+          //store the midpoint from the current line
+          let from = center.geometry.coordinates; //lng, lat
+
+          //store the center from the parcel
+          let to = [centerBound.lng, centerBound.lat]; //lng, lat
+
+          //store the distance between the midpoint current line and center parcel
+          let distance = this.$turf.distance(to, from, {
+            units: "meters",
+          });
+
+          //store distance like floatDistance
+          let floatDistance = distance;
+
+          //store distance parsed like integerDistance
+          let integerDistance = parseInt(distance);
+
+          //evaluate if the integer distance is the higher or equal
+          //if does, do a push of an object 
+          if (integerDistance >= higherDistance) {
+            higherDistance = integerDistance;
+            dataDistances.push({
+              //center of the current line
+              midpoints: scaledLineString.geometry.coordinates[1],
+              //current higher distance
+              higherDistance: higherDistance,
+              //higher distance but float
+              floatDistance: floatDistance,
+              //line geometry, between the vertex of the parcel
+              line: [geometry[index], geometry[index + 1]],
+            });
+          }
+
+          //create line that cross between parcel midpoints
+          if (this.map.getLayer(`line-layer-${index}`))
+            this.map.removeLayer(`line-layer-${index}`);
+          if (this.map.getSource(`line-source-${index}`))
+            this.map.removeSource(`line-source-${index}`);
+
+          this.map.addSource(`line-source-${index}`, {
+            type: "geojson",
+            data: scaledLineString,
+          });
+
+          this.map.addLayer({
+            id: `line-layer-${index}`,
+            type: "line",
+            source: `line-source-${index}`,
+            layout: {
+              "line-join": "round",
+              "line-cap": "round",
+            },
+            paint: {
+              "line-color": "#888",
+              "line-opacity": 0,//to see the line, change the opacity
+              "line-width": 8,
+            },
+          });
+        }
+      }
+
+      //create a variable that will store the maximum distance 
+      let maximumDistance;
+
+      //store the maximun higher distance
+      //from the center to the midpoint
+      maximumDistance = Math.max.apply(
+        Math,
+        dataDistances.map((item) => item.higherDistance)
+      );
+
+      let marker;
+      let color = "blue";
+
+      //foreach that evaluate if one of the items has the 
+      //maximun distance
+      dataDistances.forEach((item) => {
+
+        //evaluate if the current item has the integer maximun distance
+        if (item.higherDistance == maximumDistance) {
+
+          //if does, create the marker
+          marker = new this.$mapboxgl.Marker({
+            color: color,
+            draggable: true,
+          })
+            .setLngLat(item.midpoints)
+            .addTo(this.map);
+
+          //with the marker, take the features
+          let features = this.map.queryRenderedFeatures(marker._pos, {});
+
+          color = "red";
+
+          //if there is not features, that means the current item is the front line
+          if (features.length == 0) {
+
+            //create the line that shows the front line
+            let lineString = this.$turf.lineString(item.line);
+
+            //if exist, droped to later create the new line
+            if (this.map.getLayer("line-layer-front"))
+              this.map.removeLayer("line-layer-front");
+            if (this.map.getSource("line-source-front"))
+              this.map.removeSource("line-source-front");
+
+            this.map.addSource(`line-source-front`, {
+              type: "geojson",
+              data: lineString,
+            });
+
+            this.map.addLayer({
+              id: `line-layer-front`,
+              type: "line",
+              source: `line-source-front`,
+              layout: {
+                "line-join": "round",
+                "line-cap": "round",
+              },
+              paint: {
+                "line-color": "green",
+                "line-width": 5,
+              },
+            });
+          }
+          marker.remove();
+        }
+      });
+    },
   },
   watch: {
     coordinates: {
       deep: true,
       handler(value, old) {
-        // this.getAddress();
+        this.$router.push({
+        query: value,
+      });
       },
     },
     aduPosition: function (value) {
@@ -756,7 +950,7 @@ export default {
 
       this.aduLineCoordinates = this.$turf.lineString(coordinates);
       this.map.getSource("lineSource").setData(this.aduLineCoordinates);
-      this.verifyAduLine();
+      this.verifyAduLineBetween();
     },
     rotation: function (value) {
       let degrees = +value;
